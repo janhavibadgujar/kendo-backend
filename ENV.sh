@@ -1,0 +1,2 @@
+export username=
+export dbName=
