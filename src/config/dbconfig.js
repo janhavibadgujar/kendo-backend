@@ -1,7 +1,7 @@
 const config = {
     user: process.env.username,
-    password: '!#%&(Pro23',
-    server: "35.170.51.71",
+    password:process.env.password,
+    server: process.env.server_host,
     database: process.env.dbName,
     options: {
         encrypt: false ,
