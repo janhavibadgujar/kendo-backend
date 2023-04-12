@@ -9,7 +9,9 @@ const port = 8080;
 const routes=[
     "Company",
     "Asset",
-    "Site"
+    "Site",
+    "Operator",
+    "Department",
 ]
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

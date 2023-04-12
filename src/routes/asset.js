@@ -6,5 +6,9 @@ router.get("/getAssetById/:id",assetController.getById);
 
 router.get("/getAllAsset",assetController.getAll);
 
+router.get("/getAssetBySiteId/:siteid",assetController.getAssetBySiteId);
+
+router.get("/getAssetByDepartment",assetController.getAssetByDepartment);
+
 
 module.exports=router

@@ -1,25 +1,64 @@
-const sql = require('mssql');
+const assetHelper=require('../helpers/assetHelper');
 
 exports.getById=async(req,res)=>{
-    const request = new sql.Request();
-    request.input('param1', sql.VarChar(50), req.params.id);
-    request.query('SELECT * FROM Asset WHERE ID = @param1 ')
-    .then((result) => {
-      res.send(result.recordset);
-    })
-    .catch((err) => {
-        res.status(400).send({message: `Can't find details for ${req.params.id}`})
-    });
+  await assetHelper.getById(req.params.id).then((response)=>{
+    if(response.recordset != null)
+    {
+      res.send(response.recordset);
+    }
+    
+  })
+  .catch((err) => {
+    res.status(400).send({message: `Can't find details for ${req.params.id}`})
+  });
+   
 }
 
 exports.getAll=async(req,res)=>{
-    const request = new sql.Request();
-    request.query('SELECT * FROM Asset')
-    .then((result) => {
-      res.send(result.recordset);
-    })
-    .catch((err) => {
-     res.status(400).send({message:"No Data"})
-    });
+  await assetHelper.getAll().then((response)=>{
+    if(response.recordset != null)
+    {
+      res.send(response.recordset);
+    }
+  })
+  .catch((err) => {
+    res.status(400).send({message:"No Data"})
+   });
+}
+
+exports.getAssetBySiteId=async(req,res)=>{
+  var assetIds=[];
+  await assetHelper.getAssetBySiteId(req.params.siteid).then(async(response)=>{
+   if(response.recordset != null)
+   {
+      response.recordset.forEach((element)=>{
+        assetIds.push(element.AssetID)
+      })
+      await assetHelper.getAssetByAssetId(assetIds).then(async(assets)=>{
+        res.send(assets.recordset);
+      })
+   }
+  })
+  .catch((err) => {
+    res.status(400).send({message: `Can't find details for ${req.params.siteid}`})
+   });
+}
+
+exports.getAssetByDepartment=async(req,res)=>{
+  var assetIds=[];
+  await assetHelper.getAssetByDepartment(req.body.department).then(async(response)=>{
+    if(response.recordset != null)
+    {
+      response.recordset.forEach((element)=>{
+        assetIds.push(element.AssetID)
+      })
+      await assetHelper.getAssetByAssetId(assetIds).then(async(assets)=>{
+        res.send(assets.recordset);
+      })
+    }
+  })
+  .catch((err) => {
+    res.status(400).send({message: `Can't find details`})
+   });
 }
 

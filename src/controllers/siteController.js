@@ -1,11 +1,11 @@
-const sql = require('mssql');
+const siteHelper=require("../helpers/siteHelper");
 
 exports.getById=async(req,res)=>{
-    const request = new sql.Request();
-    request.input('param1', sql.VarChar(50), req.params.id);
-    request.query('SELECT * FROM Site WHERE ID = @param1 ')
-    .then((result) => {
-      res.send(result.recordset);
+    await siteHelper.getById(req.params.id).then((response) => {
+      if(response.recordset != null)
+      {
+        res.send(response.recordset);
+      }
     })
     .catch((err) => {
         res.status(400).send({message: `Can't find details for ${req.params.id}`})
@@ -13,10 +13,11 @@ exports.getById=async(req,res)=>{
 }
 
 exports.getAll=async(req,res)=>{
-    const request = new sql.Request();
-    request.query('SELECT * FROM Site')
-    .then((result) => {
-      res.send(result.recordset);
+    await siteHelper.getAll().then((response) => {
+      if(response.recordset != null)
+      {
+        res.send(response.recordset);
+      }
     })
     .catch((err) => {
      res.status(400).send({message:"No Data"})
@@ -24,11 +25,11 @@ exports.getAll=async(req,res)=>{
 }
 
 exports.getByCompany=async(req,res)=>{
-  const request = new sql.Request();
-    request.input('param1', sql.VarChar(50), req.params.companyid);
-    request.query('SELECT * FROM Site WHERE CompanyID = @param1 ')
-    .then((result) => {
-      res.send(result.recordset);
+  await siteHelper.getByCompany(req.params.companyid).then((response) => {
+    if(response.recordset != null)
+    {
+      res.send(response.recordset);
+    }
     })
     .catch((err) => {
         res.status(400).send({message: `Can't find details for ${req.params.companyid}`})
