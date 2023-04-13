@@ -1,28 +1,31 @@
 const sql = require('mssql');
-const request = new sql.Request();
+const pool = require('../config/dbconfig')
 
-
-exports.getById=async(id)=>{
-    console.log("Id---",id)
-    request.input('param1', sql.VarChar(50), id);
-   return request.query('SELECT * FROM Asset WHERE ID = @param1 ')
+exports.getById = async (id) => {
+    return await pool.request()
+        .input('param1', sql.VarChar(50), id)
+        .query('SELECT * FROM Asset WHERE ID = @param1')
 }
 
-exports.getAll=async()=>{
-    return request.query('SELECT * FROM Asset')
+exports.getAll = async () => {
+    return await pool.request()
+        .query('SELECT * FROM Asset')
 }
 
-exports.getAssetBySiteId=async(siteid)=>{
-    request.input('param1', sql.VarChar(50), siteid);
- return request.query('SELECT AssetID FROM AssetSite WHERE SiteID = @param1 ')
+exports.getAssetBySiteId = async (siteid) => {
+    return await pool.request()
+        .input('param1', sql.VarChar(50), siteid)
+        .query('SELECT AssetID FROM AssetSite WHERE SiteID = @param1')
 }
 
-exports.getAssetByAssetId=async(assetIds)=>{
+exports.getAssetByAssetId = async (assetIds) => {
     const assetIdValues = assetIds.map(asset => `CONVERT(uniqueidentifier, '${asset}')`).join(',');
-    return request.query(`SELECT ID,Name FROM Asset WHERE ID IN (${assetIdValues})`)
+    return await pool.request()
+        .query(`SELECT ID,Name FROM Asset WHERE ID IN (${assetIdValues})`)
 }
 
-exports.getAssetByDepartment=async(departmentIds)=>{
-  const departmentIdValues = departmentIds.map(dept => `CONVERT(uniqueidentifier, '${dept}')`).join(',');
-    return request.query(`SELECT * FROM AssetSite WHERE SiteID IN (${departmentIdValues})`)
+exports.getAssetByDepartment = async (departmentIds) => {
+    const departmentIdValues = departmentIds.map(dept => `CONVERT(uniqueidentifier, '${dept}')`).join(',');
+    return await pool.request()
+        .query(`SELECT * FROM AssetSite WHERE SiteID IN (${departmentIdValues})`)
 }
