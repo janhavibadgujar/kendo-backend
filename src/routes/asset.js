@@ -8,7 +8,7 @@ router.get("/getAllAsset",assetController.getAll);
 
 router.get("/getAssetBySiteId/:siteid",assetController.getAssetBySiteId);
 
-router.get("/getAssetByDepartment",assetController.getAssetByDepartment);
+router.post("/getAssetByDepartment",assetController.getAssetByDepartment);
 
 
 module.exports=router

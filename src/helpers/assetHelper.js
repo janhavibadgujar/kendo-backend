@@ -3,7 +3,6 @@ const request = new sql.Request();
 
 
 exports.getById=async(id)=>{
-    console.log("Id---",id)
     request.input('param1', sql.VarChar(50), id);
    return request.query('SELECT * FROM Asset WHERE ID = @param1 ')
 }
