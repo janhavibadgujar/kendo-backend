@@ -1,4 +1,4 @@
-const departmentHelper=require("../helpers/departmentHelper");
+const departmentHelper = require("../helpers/departmentHelper");
 
 exports.getDepartmentBySiteId=async(req,res)=>{
     var result=[];
@@ -12,8 +12,8 @@ exports.getDepartmentBySiteId=async(req,res)=>{
             res.send(result)
         })
         .catch((err) => {
-            console.log("Error--",err)
-            res.status(400).send({message: `Can't find details for ${req.body.siteId}`})
+            console.log("Error--", err)
+            res.status(400).send({ message: `Can't find details for ${req.body.siteId}` })
         });
 }
 

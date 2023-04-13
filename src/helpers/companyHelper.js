@@ -1,11 +1,13 @@
 const sql = require('mssql');
-const request = new sql.Request();
+const pool = require('../config/dbconfig')
 
-exports.getById=async(id)=>{
-    request.input('id', sql.VarChar(50), id);
-  return  request.query('SELECT * FROM Company WHERE ID = @id ')
+exports.getById = async (id) => {
+  return await pool.request()
+    .input('id', sql.VarChar(50), id)
+    .query('SELECT * FROM Company WHERE ID = @id ')
 }
 
-exports.getAllCompany=async()=>{
-    return request.query('SELECT * FROM Company')
+exports.getAllCompany = async () => {
+  return await pool.request()
+    .query('SELECT * FROM Company')
 }

@@ -1,4 +1,4 @@
-const assetHelper=require('../helpers/assetHelper');
+const assetHelper = require('../helpers/assetHelper');
 
 exports.getById=async(req,res)=>{
   var result=[];
@@ -11,10 +11,10 @@ exports.getById=async(req,res)=>{
       result.push(data)
       res.send(result);
   })
-  .catch((err) => {
-    res.status(400).send({message: `Can't find details for ${req.params.id}`})
-  });
-   
+    .catch((err) => {
+      res.status(400).send({ message: `Can't find details for ${req.params.id}` })
+    });
+
 }
 
 exports.getAll=async(req,res)=>{
@@ -28,9 +28,9 @@ exports.getAll=async(req,res)=>{
     result.push(data)
     res.send(result);
   })
-  .catch((err) => {
-    res.status(400).send({message:"No Data"})
-   });
+    .catch((err) => {
+      res.status(400).send({ message: "No Data" })
+    });
 }
 
 exports.getAssetBySiteId=async(req,res)=>{
@@ -50,9 +50,9 @@ exports.getAssetBySiteId=async(req,res)=>{
         res.send(result);
       })
   })
-  .catch((err) => {
-    res.status(400).send({message: `Can't find details for ${req.params.siteid}`})
-   });
+    .catch((err) => {
+      res.status(400).send({ message: `Can't find details for ${req.params.siteid}` })
+    });
 }
 
 exports.getAssetByDepartment=async(req,res)=>{
@@ -75,8 +75,8 @@ exports.getAssetByDepartment=async(req,res)=>{
       })
     }
   })
-  .catch((err) => {
-    res.status(400).send({message: `Can't find details`})
-   });
+    .catch((err) => {
+      res.status(400).send({ message: `Can't find details` })
+    });
 }
 

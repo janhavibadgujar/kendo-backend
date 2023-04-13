@@ -1,4 +1,4 @@
-const companyHelper=require("../helpers/companyHelper");
+const companyHelper = require("../helpers/companyHelper");
 
 exports.getById=async(req,res)=>{
   var result=[];
@@ -11,9 +11,9 @@ exports.getById=async(req,res)=>{
       result.push(data)
       res.send(result)
   })
-  .catch((err) => {
-    res.status(400).send({message: `Can't find details for ${req.params.id}`})
-  });
+    .catch((err) => {
+      res.status(400).send({ message: `Can't find details for ${req.params.id}` })
+    });
 }
 
 exports.getAllCompany=async(req,res)=>{
@@ -28,6 +28,6 @@ exports.getAllCompany=async(req,res)=>{
        res.send(result)
     })
     .catch((err) => {
-      res.status(400).send({message:"No Data"})
-     });
+      res.status(400).send({ message: "No Data" })
+    });
 }

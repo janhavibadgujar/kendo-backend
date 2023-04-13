@@ -1,4 +1,4 @@
-const siteHelper=require("../helpers/siteHelper");
+const siteHelper = require("../helpers/siteHelper");
 
 exports.getById=async(req,res)=>{
   var result=[];
@@ -12,7 +12,7 @@ exports.getById=async(req,res)=>{
       res.send(result)
     })
     .catch((err) => {
-        res.status(400).send({message: `Can't find details for ${req.params.id}`})
+      res.status(400).send({ message: `Can't find details for ${req.params.id}` })
     });
 }
 
@@ -28,7 +28,7 @@ exports.getAll=async(req,res)=>{
         res.send(result)
     })
     .catch((err) => {
-     res.status(400).send({message:"No Data"})
+      res.status(400).send({ message: "No Data" })
     });
 }
 
