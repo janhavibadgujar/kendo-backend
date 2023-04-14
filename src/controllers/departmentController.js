@@ -2,7 +2,7 @@ const departmentHelper = require("../helpers/departmentHelper");
 
 exports.getDepartmentBySiteId=async(req,res)=>{
     var result=[];
-    await departmentHelper.getDepartmentBySiteId(req.body.siteId).then((response)=>{
+    await departmentHelper.getDepartmentBySiteId(req.body.SiteId).then((response)=>{
             const data={
                 Data:response.recordset,
                 Message:'',
@@ -13,7 +13,7 @@ exports.getDepartmentBySiteId=async(req,res)=>{
         })
         .catch((err) => {
             console.log("Error--", err)
-            res.status(400).send({ message: `Can't find details for ${req.body.siteId}` })
+            res.status(400).send({ message: `Can't find details for ${req.body.SiteId}` })
         });
 }
 
