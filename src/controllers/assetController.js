@@ -34,24 +34,29 @@ exports.getAll=async(req,res)=>{
 }
 
 exports.getAssetBySiteId=async(req,res)=>{
-  var assetIds=[];
   var result=[];
-  await assetHelper.getAssetBySiteId(req.params.siteid).then(async(response)=>{
+  var custom=[];
+  await assetHelper.getAssetBySiteId(req.body.SiteID).then(async(response)=>{
       response.recordset.forEach((element)=>{
-        assetIds.push(element.AssetID)
+       const data={
+        AssetIsAvailable:element.Active,
+        ID:element.AssetTypeID,
+        assets:JSON.parse(element.Assets),
+        assetstype:element.Name
+       }
+       result.push(data)
       })
-      await assetHelper.getAssetByAssetId(assetIds).then(async(assets)=>{
-        const data={
-          Data:assets.recordset,
-          Message:'',
-          Status:true
-        }
-        result.push(data)
-        res.send(result);
-      })
+      const details={
+        Data:result,
+        Message:"",
+        Status:true
+      }
+      custom.push(details)
+      res.send(custom)
   })
     .catch((err) => {
-      res.status(400).send({ message: `Can't find details for ${req.params.siteid}` })
+      console.log("Err--",err)
+      res.status(400).send({ message: `Can't find details for ${req.body.SiteID}` })
     });
 }
 
@@ -59,8 +64,6 @@ exports.getAssetByDepartment=async(req,res)=>{
   var assetIds=[];
   var result=[];
   await assetHelper.getAssetByDepartment(req.body.department).then(async(response)=>{
-    if(response.recordset != null)
-    {
       response.recordset.forEach((element)=>{
         assetIds.push(element.AssetID)
       })
@@ -73,7 +76,6 @@ exports.getAssetByDepartment=async(req,res)=>{
         result.push(data)
         res.send(result);
       })
-    }
   })
     .catch((err) => {
       res.status(400).send({ message: `Can't find details` })

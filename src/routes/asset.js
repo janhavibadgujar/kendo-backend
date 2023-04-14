@@ -6,7 +6,7 @@ router.get("/getAssetById/:id",assetController.getById);
 
 router.get("/getAllAsset",assetController.getAll);
 
-router.get("/getAssetBySiteId/:siteid",assetController.getAssetBySiteId);
+router.post("/getAssetBySiteId",assetController.getAssetBySiteId);
 
 router.post("/getAssetByDepartment",assetController.getAssetByDepartment);
 
