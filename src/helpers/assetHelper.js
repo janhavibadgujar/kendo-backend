@@ -13,15 +13,38 @@ exports.getAll = async () => {
 }
 
 exports.getAssetBySiteId = async (siteid) => {
-    const q=`SELECT a.AssetTypeID, at.Active, at.Name, CONCAT('[', CAST(STRING_AGG(CONCAT('{"AssetTypeID":', QUOTENAME(CAST(a.AssetTypeID AS NVARCHAR(MAX)), '"'), ',"AssetTypeName":', QUOTENAME(CAST(at.Name AS NVARCHAR(MAX)), '"'), ',"ID":', QUOTENAME(CAST(a.ID AS NVARCHAR(MAX)), '"'), ',"System":', QUOTENAME(CAST(a.System AS NVARCHAR(MAX)), '"'), ',"UniqueID":', QUOTENAME(CAST(a.UniqueID AS NVARCHAR(MAX)), '"'), ',"name":', QUOTENAME(CAST(a.Name AS NVARCHAR(MAX)), '"'),'}'), ',') WITHIN GROUP (ORDER BY a.ID) AS NVARCHAR(MAX)), ']') AS Assets
-    FROM Asset a
-    JOIN AssetType at ON a.AssetTypeID = at.ID
-    WHERE a.AssetTypeID IN (SELECT AssetTypeID FROM AssetTypeSite WHERE SiteID = '${siteid}')
-    GROUP BY a.AssetTypeID, at.Name, at.Active;`
 
-
+     const q=`SELECT a.AssetTypeID, at.Active, at.Name, CONCAT('[', CAST(STRING_AGG(CONCAT('{"AssetTypeID":', QUOTENAME(CAST(a.AssetTypeID AS NVARCHAR(MAX)), '"'), ',"AssetTypeName":', QUOTENAME(CAST(at.Name AS NVARCHAR(MAX)), '"'), ',"ID":', QUOTENAME(CAST(a.ID AS NVARCHAR(MAX)), '"'), ',"System":', QUOTENAME(CAST(a.System AS NVARCHAR(MAX)), '"'), ',"UniqueID":', QUOTENAME(CAST(a.UniqueID AS NVARCHAR(MAX)), '"'), ',"name":', QUOTENAME(CAST(a.Name AS NVARCHAR(MAX)), '"'),'}'), ',') WITHIN GROUP (ORDER BY a.ID) AS NVARCHAR(MAX)), ']') AS Assets
+     FROM Asset a
+     JOIN AssetType at ON a.AssetTypeID = at.ID
+     WHERE a.AssetTypeID IN (SELECT AssetTypeID FROM AssetTypeSite WHERE SiteID = '${siteid}')
+     GROUP BY a.AssetTypeID, at.Name, at.Active;`
+     const q1=`SELECT a.AssetTypeID, at.Active, at.Name, 
+     CONCAT('[', 
+         STUFF((SELECT ',' + 
+                       CONCAT(
+                           '{"AssetTypeID":', QUOTENAME(CAST(a.AssetTypeID AS NVARCHAR(MAX)), '"'), 
+                           ',"AssetTypeName":', QUOTENAME(CAST(at.Name AS NVARCHAR(MAX)), '"'), 
+                           ',"ID":', QUOTENAME(CAST(MAX(a.ID) AS NVARCHAR(MAX)), '"'), 
+                           ',"System":', QUOTENAME(CAST(MAX(a.System) AS NVARCHAR(MAX)), '"'), 
+                           ',"UniqueID":', QUOTENAME(CAST(MAX(a.UniqueID) AS NVARCHAR(MAX)), '"'), 
+                           ',"name":', QUOTENAME(CAST(MAX(a.Name) AS NVARCHAR(MAX)), '"'),'}'
+                       )
+                 FROM Asset a2 
+                 JOIN AssetType at2 ON a2.AssetTypeID = at2.ID 
+                 WHERE a2.AssetTypeID = a.AssetTypeID 
+                 FOR XML PATH('')), 1, 1, '')
+         , ']'
+     ) AS Assets
+FROM Asset a
+JOIN AssetType at ON a.AssetTypeID = at.ID
+WHERE a.AssetTypeID IN (SELECT AssetTypeID FROM AssetTypeSite WHERE SiteID = '${siteid}'
+)
+GROUP BY a.AssetTypeID, at.Name, at.Active;
+`
+     //console.log("Q1--",q1)
     return await pool.request()
-    .query(q)
+    .query(q1)
 }
 
 exports.getAssetByAssetId = async (assetIds) => {
