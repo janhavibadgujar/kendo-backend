@@ -2,14 +2,22 @@ const departmentHelper = require("../helpers/departmentHelper");
 
 exports.getDepartmentBySiteId=async(req,res)=>{
     var result=[];
-    await departmentHelper.getDepartmentBySiteId(req.body.SiteId).then((response)=>{
+    var ids=[];
+    await departmentHelper.getDepartmentBySiteId(req.body.SiteId).then(async(response)=>{
+        response.recordset.forEach((element)=>{
+            ids.push(element.ID)
+        })
+        await departmentHelper.getDepartmentByID(ids).then((resp)=>{
+            //console.log("Response----",resp.recordset)
             const data={
-                Data:response.recordset,
+                Data:resp.recordset,
                 Message:'',
                 Status:true
             }
             result.push(data)
             res.send(result)
+        })
+            
         })
         .catch((err) => {
             console.log("Error--", err)

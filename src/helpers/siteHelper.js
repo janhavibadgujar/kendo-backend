@@ -15,5 +15,5 @@ exports.getAll = async () => {
 exports.getByCompany = async (companyid) => {
     return await pool.request()
         .input('param1', sql.VarChar(50), companyid)
-        .query('SELECT * FROM Site WHERE CompanyID = @param1 AND Level = 2')
+        .query('SELECT ID,Name FROM Site WHERE CompanyID = @param1 AND Level = 1')
 }
