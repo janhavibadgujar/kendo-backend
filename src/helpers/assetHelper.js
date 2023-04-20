@@ -13,54 +13,20 @@ exports.getAll = async () => {
 }
 
 exports.getAssetBySiteId = async (siteid) => {
-console.log("HELPER---",siteid)
-const values=[1,2,3]
-const q=`SELECT a.AssetTypeID, at.Active, at.Name, CONCAT('[', CAST(STRING_AGG(CONCAT('{"AssetTypeID":', QUOTENAME(CAST(a.AssetTypeID AS NVARCHAR(MAX)), '"'), ',"AssetTypeName":', QUOTENAME(CAST(at.Name AS NVARCHAR(MAX)), '"'), ',"ID":', QUOTENAME(CAST(a.ID AS NVARCHAR(MAX)), '"'), ',"System":', QUOTENAME(CAST(a.System AS NVARCHAR(MAX)), '"'), ',"UniqueID":', QUOTENAME(CAST(a.UniqueID AS NVARCHAR(MAX)), '"'), ',"name":', QUOTENAME(CAST(a.Name AS NVARCHAR(MAX)), '"'),'}'), ',') WITHIN GROUP (ORDER BY a.ID) AS NVARCHAR(MAX)), ']') AS Assets
-     FROM Asset a
-     JOIN AssetType at ON a.AssetTypeID = at.ID
-     WHERE a.AssetTypeID IN (SELECT AssetTypeID FROM AssetTypeSite WHERE SiteID = '${siteid}')
-     GROUP BY a.AssetTypeID, at.Name, at.Active;`
+const q=`SELECT a.AssetTypeID, a.AssetTypeName, 
+(SELECT a2.AssetTypeID, a2.AssetTypeName, a2.ID, a2.System, a2.UniqueID, a2.Name 
+ FROM Asset a2 
+ INNER JOIN AssetSite ass ON a2.ID = ass.AssetID 
+ WHERE ass.SiteID = '${siteid}' AND a2.AssetTypeID = a.AssetTypeID 
+ FOR JSON PATH) AS Assets 
+FROM Asset a 
+INNER JOIN AssetSite ass ON a.ID = ass.AssetID 
+INNER JOIN Unit ut ON a.UnitID = ut.ID 
+WHERE ass.SiteID = '${siteid}' AND ut.UnitType  IN (1,2,3)
+GROUP BY a.AssetTypeID, a.AssetTypeName`
 
-const q4=`SELECT a.AssetTypeID, a.AssetTypeName,
-(SELECT a2.AssetTypeID, a2.AssetTypeName, a2.ID, a2.System, a2.UniqueID, a2.Name
- FROM Asset a2
- INNER JOIN AssetSite ass ON a2.ID = ass.AssetID
- WHERE ass.SiteID = '${siteid}' AND a2.AssetTypeID = a.AssetTypeID
- FOR JSON PATH) AS Assets
-FROM Asset a
-INNER JOIN AssetSite ass ON a.ID = ass.AssetID
-INNER JOIN Unit ut ON a.UnitID = ut.ID
-WHERE ass.SiteID = '${siteid}' AND ut.UnitType IN (${values})
-GROUP BY a.AssetTypeID,a.AssetTypeName;`
-
-const q6=`SELECT a.AssetTypeID, a.AssetTypeName,
-(SELECT a2.AssetTypeID, a2.AssetTypeName, a2.ID, a2.System, a2.UniqueID, a2.Name
- FROM Asset a2
- INNER JOIN AssetSite ass ON a2.ID = ass.AssetID
- WHERE ass.SiteID = '${siteid}' AND a2.AssetTypeID = a.AssetTypeID
- FOR JSON PATH) AS Assets
-FROM Asset a
-INNER JOIN AssetSite ass ON a.ID = ass.AssetID
-WHERE ass.SiteID = '${siteid}'
-GROUP BY a.AssetTypeID, a.AssetTypeName;`
-
-
-const q7=`SELECT a.AssetTypeID, a.AssetTypeName,
-(SELECT a2.AssetTypeID, a2.AssetTypeName, a2.ID, a2.System, a2.UniqueID, a2.Name
- FROM Asset a2
- INNER JOIN AssetSite ass ON a2.ID = ass.AssetID
- WHERE ass.SiteID = '${siteid}' AND a2.AssetTypeID = a.AssetTypeID
- FOR JSON PATH) AS Assets
-FROM Asset a
-INNER JOIN AssetSite ass ON a.ID = ass.AssetID
-LEFT JOIN Unit ut ON a.UnitID = ut.ID
-WHERE ass.SiteID = '${siteid}' AND (ut.UnitType IN (1,2,3) OR ut.UnitType IS NULL)
-GROUP BY a.AssetTypeID, a.AssetTypeName;`
-
-
-//console.log("QUERY>>>",q5)
     return await pool.request()
-    .query(q6)
+    .query(q)
 }
 
 exports.getAssetByAssetId = async (assetIds) => {
@@ -100,5 +66,11 @@ exports.getFaultCode=async(siteID)=>{
 
 
 exports.getUnitCount=async(siteID)=>{
-    
+    const q=`SELECT LastUpdate
+    FROM Asset 
+    INNER JOIN AssetSite ON Asset.ID = AssetSite.AssetID
+    WHERE AssetSite.SiteID = '${siteID}'`
+
+    return await pool.request()
+    .query(q)
 }

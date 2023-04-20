@@ -117,10 +117,37 @@ exports.getFaultCode=async(req,res)=>{
 
 exports.getUnitCount=async(req,res)=>{
   var result=[];
+  var custom=[];
+  var online=0;
+  var offline=0;
   await assetHelper.getUnitCount(req.params.SiteID).then((response)=>{
-
+    response.recordset.forEach((element)=>{
+      const now = new Date();
+      const dateToCheck = new Date(element.LastUpdate);
+      const diffInMs = now - dateToCheck;
+      if (diffInMs <= 300000) {
+        online = online + 1;
+      } 
+      else 
+      {
+        offline = offline + 1;
+      }
+    })
+    const data={
+      onlineCount:online,
+      offlineCount:offline,
+    }
+    result.push(data)
+    const data1={
+      Data:result,
+      Message:'',
+      Status:true
+    }
+    custom.push(data1)
+    res.send(custom)
   })
   .catch((err) => {
+    console.log('ERR---',err)
     res.status(400).send({ message: `Can't find details` })
   });
 }

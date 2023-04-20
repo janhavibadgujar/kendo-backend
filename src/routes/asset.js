@@ -10,11 +10,11 @@ router.post("/getAssetBySiteId",assetController.getAssetBySiteId);
 
 router.post("/getAssetByDepartment",assetController.getAssetByDepartment);
 
-router.get("/getChargerMap",assetController.getChargerMap);
+router.get("/getChargerMap/:SiteID",assetController.getChargerMap);
 
-router.get("/getFaultCode",assetController.getFaultCode);
+router.get("/getFaultCode/:SiteID",assetController.getFaultCode);
 
-router.get("/getUnitCount",assetController.getUnitCount);
+router.get("/getUnitCount/:SiteID",assetController.getUnitCount);
 
 
 module.exports=router
