@@ -44,7 +44,6 @@ exports.getByCompany=async(req,res)=>{
         res.send(result)
     })
     .catch((err) => {
-      console.log("Errr---",err)
         res.status(400).send({message: `Can't find details for ${req.params.companyid}`})
     });
 }

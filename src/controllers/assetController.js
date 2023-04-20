@@ -36,9 +36,8 @@ exports.getAll=async(req,res)=>{
 exports.getAssetBySiteId=async(req,res)=>{
   var result=[];
   var custom=[];
-  console.log("SITE---",req.body.SiteID)
+
   await assetHelper.getAssetBySiteId(req.body.SiteID).then(async(response)=>{
-  //  console.log('Response---',response)
       response.recordset.forEach((element)=>{
        const data={
         ID:element.AssetTypeID,
@@ -56,7 +55,6 @@ exports.getAssetBySiteId=async(req,res)=>{
       res.send(custom)
   })
     .catch((err) => {
-      console.log("Err--",err)
       res.status(400).send({ message: `Can't find details for ${req.body.SiteID}` })
     });
 }
@@ -147,7 +145,6 @@ exports.getUnitCount=async(req,res)=>{
     res.send(custom)
   })
   .catch((err) => {
-    console.log('ERR---',err)
     res.status(400).send({ message: `Can't find details` })
   });
 }

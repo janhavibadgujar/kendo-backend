@@ -33,10 +33,6 @@ exports.getAssetByAssetId = async (assetIds) => {
     const assetIdValues = assetIds.map(asset => `CONVERT(uniqueidentifier, '${asset}')`).join(',');
     return await pool.request()
     .query(`SELECT ID,Name FROM Asset WHERE ID IN (${assetIdValues})`)
-        // .query(`SELECT a1.ID,a1.Name,a1.Active,a1.AssetTypeID,a1.System,a1.UniqueID,a2.Name
-        //         FROM Asset a1
-        //         INNER JOIN AssetType a2 ON a1.AssetTypeID = a2.ID
-        //         WHERE a1.AssetTypeID IN (${assetIdValues})`)
 }
 
 exports.getAssetByDepartment = async (departmentIds) => {
@@ -56,9 +52,10 @@ exports.getChargerMap=async(siteID)=>{
 }
 
 exports.getFaultCode=async(siteID)=>{
-    const q=`SELECT COUNT(*) AS TotalCountfrom FROM ServiceAndProduct sap 
-    INNER JOIN Asset a on a.[System] =sap.ID
-    WHERE a.[System] IN (5,6,7);`
+    const q=`SELECT COUNT(*) as TotalCount 
+    FROM Asset a
+    JOIN AssetSite as2 on as2.AssetID =a.ID 
+    WHERE a.[System] IN (5,6,7) AND as2.SiteID ='${siteID}';`
     
     return await pool.request()
     .query(q)

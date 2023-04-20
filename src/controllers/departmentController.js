@@ -8,7 +8,6 @@ exports.getDepartmentBySiteId=async(req,res)=>{
             ids.push(element.ID)
         })
         await departmentHelper.getDepartmentByID(ids).then((resp)=>{
-            //console.log("Response----",resp.recordset)
             const data={
                 Data:resp.recordset,
                 Message:'',
@@ -20,7 +19,6 @@ exports.getDepartmentBySiteId=async(req,res)=>{
             
         })
         .catch((err) => {
-            console.log("Error--", err)
             res.status(400).send({ message: `Can't find details for ${req.body.SiteId}` })
         });
 }
@@ -37,7 +35,6 @@ exports.getDepartmentByCompanyId=async(req,res)=>{
         res.send(result)
     })
     .catch((err) => {
-        console.log("Error--",err)
         res.status(400).send({message: `Can't find details for ${req.body.siteId}`})
     });
 }
