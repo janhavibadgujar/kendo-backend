@@ -16,5 +16,7 @@ router.get("/getFaultCode/:SiteID",assetController.getFaultCode);
 
 router.get("/getUnitCount/:SiteID",assetController.getUnitCount);
 
+router.post("/getMaintenanceStatusReport",assetController.getMaintenanceStatusReport);
+
 
 module.exports=router

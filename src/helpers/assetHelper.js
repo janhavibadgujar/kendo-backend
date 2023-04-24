@@ -71,3 +71,19 @@ exports.getUnitCount=async(siteID)=>{
     return await pool.request()
     .query(q)
 }
+
+exports.getMaintenanceStatusReport=async(assetIds)=>{
+    const assetIdValues = assetIds.map(asset => `CONVERT(uniqueidentifier, '${asset}')`).join(',');
+
+    const q=`SELECT  
+                SUM(CASE WHEN EventCode = 264 THEN 1 ELSE 0 END) AS Maintenance,
+                SUM(CASE WHEN EventCode = 779 THEN 1 ELSE 0 END) AS Upcoming,
+                SUM(CASE WHEN EventCode = 1289 THEN 1 ELSE 0 END) AS Completed,
+                SUM(CASE WHEN EventCode = 785 THEN 1 ELSE 0 END) AS Overdue,
+                COUNT(*) AS Total
+            FROM Alarm
+            WHERE AssetID IN (${assetIdValues});`
+
+        return await pool.request()
+            .query(q)
+}

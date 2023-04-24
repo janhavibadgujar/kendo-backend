@@ -148,3 +148,21 @@ exports.getUnitCount=async(req,res)=>{
     res.status(400).send({ message: `Can't find details` })
   });
 }
+
+
+exports.getMaintenanceStatusReport=async(req,res)=>{
+  var result=[];
+  await assetHelper.getMaintenanceStatusReport(req.body.assetID).then((response)=>{
+      const data={
+        Data:response.recordset,
+        Message:'',
+        Status:true
+      }
+      result.push(data);
+        res.send(result)
+  })
+  .catch((err) => {
+    console.log("err",err)
+    res.status(400).send({ message: `Can't find details` })
+  });
+}
