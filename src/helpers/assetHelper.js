@@ -54,7 +54,7 @@ exports.getChargerMap=async(siteID)=>{
 exports.getFaultCode=async(siteID)=>{
     const q=`SELECT COUNT(*) as TotalCount 
     FROM Asset a
-    JOIN AssetSite as2 on as2.AssetID =a.ID 
+    INNER JOIN AssetSite as2 on as2.AssetID =a.ID 
     WHERE a.[System] IN (5,6,7) AND as2.SiteID ='${siteID}';`
     
     return await pool.request()
@@ -86,4 +86,40 @@ exports.getMaintenanceStatusReport=async(assetIds)=>{
 
         return await pool.request()
             .query(q)
+}
+
+exports.getPowerUsage = async(siteID,date)=>{
+    const q1=`SELECT FORMAT([Date], 'HH:00') AS hour, COUNT(InstantaneouskW) AS Count, MAX(InstantaneouskW) AS InstantaneouskWCount
+    FROM AlarmPowerUsage
+    WHERE AlarmPowerUsage.SiteID='${siteID}' AND CAST([Date] AS DATE) = '${date}' AND AlarmPowerUsage.InstantaneouskW >0
+    GROUP BY FORMAT([Date], 'HH:00')`   
+    
+    const q2=`WITH AllHours AS (
+        SELECT FORMAT(number, '00') + ':00' AS Hour
+        FROM master..spt_values
+        WHERE type = 'P' AND number BETWEEN 0 AND 23
+      )
+      SELECT AllHours.Hour,
+        COUNT(CASE WHEN AlarmPowerUsage.InstantaneouskW > 0 THEN 1 END) AS Charger,
+        COALESCE(MAX(AlarmPowerUsage.InstantaneouskW), 0) AS MaxkW
+      FROM AllHours
+      LEFT JOIN AlarmPowerUsage ON AllHours.Hour = FORMAT(DATEPART(hour, AlarmPowerUsage.Date), '00') + ':00'
+        AND AlarmPowerUsage.SiteID = '${siteID}'
+        AND CONVERT(date, AlarmPowerUsage.Date) = '${date}'
+      GROUP BY AllHours.Hour
+      ORDER BY AllHours.Hour`
+
+      const q3=`SELECT FORMAT(number, '00') + ':00' AS Hour,
+      COUNT(CASE WHEN AlarmPowerUsage.InstantaneouskW > 0 THEN 1 END) AS Charger,
+      COALESCE(MAX(AlarmPowerUsage.InstantaneouskW), 0) AS MaxkW
+FROM master..spt_values
+LEFT JOIN AlarmPowerUsage 
+   ON FORMAT(DATEPART(hour, AlarmPowerUsage.Date), '00') + ':00' = FORMAT(number, '00') + ':00'
+       AND AlarmPowerUsage.SiteID = '${siteID}'
+       AND CONVERT(date, AlarmPowerUsage.Date) = '${date}'
+WHERE type = 'P' AND number BETWEEN 0 AND 23
+GROUP BY FORMAT(number, '00') + ':00'
+ORDER BY Hour;`
+    return await pool.request()
+            .query(q3)
 }

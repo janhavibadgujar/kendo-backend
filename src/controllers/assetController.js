@@ -109,6 +109,7 @@ exports.getFaultCode=async(req,res)=>{
     res.send(result)
   })
   .catch((err) => {
+    console.log("Err---",err)
     res.status(400).send({ message: `Can't find details` })
   });
 }
@@ -160,6 +161,23 @@ exports.getMaintenanceStatusReport=async(req,res)=>{
       }
       result.push(data);
         res.send(result)
+  })
+  .catch((err) => {
+    console.log("err",err)
+    res.status(400).send({ message: `Can't find details` })
+  });
+}
+
+exports.getPowerUsage=async(req,res)=>{
+  var result=[];
+  await assetHelper.getPowerUsage(req.body.SiteID,req.body.date).then((response)=>{
+    const data={
+      Data:response.recordset,
+      Message:'',
+      Status:true
+    }
+    result.push(data);
+      res.send(result)
   })
   .catch((err) => {
     console.log("err",err)
