@@ -170,17 +170,42 @@ exports.getMaintenanceStatusReport=async(req,res)=>{
 
 exports.getPowerUsage=async(req,res)=>{
   var result=[];
-  await assetHelper.getPowerUsage(req.body.SiteID,req.body.date).then((response)=>{
-    const data={
-      Data:response.recordset,
-      Message:'',
-      Status:true
-    }
-    result.push(data);
-      res.send(result)
-  })
-  .catch((err) => {
-    console.log("err",err)
-    res.status(400).send({ message: `Can't find details` })
-  });
+  var today=new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const currentDate=`${year}-${month}-${day}`;
+  if(currentDate != req.body.date)
+  {
+    await assetHelper.getPowerUsage(req.body.SiteID,req.body.date).then((response)=>{
+      const data={
+        Data:response.recordset,
+        Message:'',
+        Status:true
+      }
+      result.push(data);
+        res.send(result)
+    })
+    .catch((err) => {
+      console.log("err",err)
+      res.status(400).send({ message: `Can't find details` })
+    });
+  }
+  else
+  {
+    await assetHelper.getPowerUsageCurrent(req.body.SiteID,req.body.date).then((response)=>{
+      
+      const data={
+        Data:response.recordset,
+        Message:'',
+        Status:true
+      }
+      result.push(data);
+        res.send(result)
+    })
+    .catch((err) => {
+      console.log("err",err)
+      res.status(400).send({ message: `Can't find details` })
+    });
+  }
 }

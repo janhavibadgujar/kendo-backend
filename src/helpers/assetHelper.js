@@ -89,37 +89,49 @@ exports.getMaintenanceStatusReport=async(assetIds)=>{
 }
 
 exports.getPowerUsage = async(siteID,date)=>{
-    const q1=`SELECT FORMAT([Date], 'HH:00') AS hour, COUNT(InstantaneouskW) AS Count, MAX(InstantaneouskW) AS InstantaneouskWCount
-    FROM AlarmPowerUsage
-    WHERE AlarmPowerUsage.SiteID='${siteID}' AND CAST([Date] AS DATE) = '${date}' AND AlarmPowerUsage.InstantaneouskW >0
-    GROUP BY FORMAT([Date], 'HH:00')`   
-    
-    const q2=`WITH AllHours AS (
-        SELECT FORMAT(number, '00') + ':00' AS Hour
-        FROM master..spt_values
-        WHERE type = 'P' AND number BETWEEN 0 AND 23
-      )
-      SELECT AllHours.Hour,
-        COUNT(CASE WHEN AlarmPowerUsage.InstantaneouskW > 0 THEN 1 END) AS Charger,
-        COALESCE(MAX(AlarmPowerUsage.InstantaneouskW), 0) AS MaxkW
-      FROM AllHours
-      LEFT JOIN AlarmPowerUsage ON AllHours.Hour = FORMAT(DATEPART(hour, AlarmPowerUsage.Date), '00') + ':00'
-        AND AlarmPowerUsage.SiteID = '${siteID}'
-        AND CONVERT(date, AlarmPowerUsage.Date) = '${date}'
-      GROUP BY AllHours.Hour
-      ORDER BY AllHours.Hour`
-
       const q3=`SELECT FORMAT(number, '00') + ':00' AS Hour,
       COUNT(CASE WHEN AlarmPowerUsage.InstantaneouskW > 0 THEN 1 END) AS Charger,
       COALESCE(MAX(AlarmPowerUsage.InstantaneouskW), 0) AS MaxkW
-FROM master..spt_values
-LEFT JOIN AlarmPowerUsage 
-   ON FORMAT(DATEPART(hour, AlarmPowerUsage.Date), '00') + ':00' = FORMAT(number, '00') + ':00'
-       AND AlarmPowerUsage.SiteID = '${siteID}'
-       AND CONVERT(date, AlarmPowerUsage.Date) = '${date}'
-WHERE type = 'P' AND number BETWEEN 0 AND 23
-GROUP BY FORMAT(number, '00') + ':00'
-ORDER BY Hour;`
+    FROM master..spt_values
+    LEFT JOIN AlarmPowerUsage 
+    ON FORMAT(DATEPART(hour, AlarmPowerUsage.Date), '00') + ':00' = FORMAT(number, '00') + ':00'
+        AND AlarmPowerUsage.SiteID = '${siteID}'
+        AND CONVERT(date, AlarmPowerUsage.Date) = '${date}'
+    WHERE type = 'P' AND number BETWEEN 0 AND 23
+    GROUP BY FORMAT(number, '00') + ':00'
+    ORDER BY Hour;`
+
+    
     return await pool.request()
             .query(q3)
+}
+
+exports.getPowerUsageCurrent=async(siteID,date)=>{
+
+const q=`SELECT 
+FORMAT(DATEADD(HOUR, number, startHour), 'dd-MM-yyyy HH:00') AS Hour, 
+COALESCE(COUNT(CASE WHEN AlarmPowerUsage.InstantaneouskW > 0 THEN 1 END), 0) AS Charger, 
+COALESCE(MAX(AlarmPowerUsage.InstantaneouskW), 0) AS MaxkW 
+FROM (
+SELECT 
+  DATEADD(HOUR, -23, DATEADD(HOUR, DATEDIFF(HOUR, 0, GETDATE()), 0)) AS startHour,
+  0 AS number
+UNION ALL
+SELECT 
+  DATEADD(HOUR, -23, DATEADD(HOUR, DATEDIFF(HOUR, 0, GETDATE()), 0)) AS startHour,
+  number + 1 AS number
+FROM master..spt_values 
+WHERE type = 'P' AND number BETWEEN 0 AND 22
+) AS hours
+LEFT JOIN AlarmPowerUsage 
+ON FORMAT(AlarmPowerUsage.Date, 'dd-MM-yyyy HH:00') = FORMAT(DATEADD(HOUR, number, startHour), 'dd-MM-yyyy HH:00') 
+AND AlarmPowerUsage.SiteID = '${siteID}'
+AND AlarmPowerUsage.Date >= DATEADD(HOUR, -23, DATEADD(HOUR, DATEDIFF(HOUR, 0, GETDATE()), 0))
+AND AlarmPowerUsage.Date < DATEADD(HOUR, DATEDIFF(HOUR, 0, '${date}'), 0)
+WHERE hours.startHour >= DATEADD(HOUR, -23, DATEADD(HOUR, DATEDIFF(HOUR, 0, GETDATE()), 0))
+GROUP BY FORMAT(DATEADD(HOUR, number, startHour), 'dd-MM-yyyy HH:00')
+ORDER BY Hour;`
+
+    return await pool.request()
+            .query(q)
 }
