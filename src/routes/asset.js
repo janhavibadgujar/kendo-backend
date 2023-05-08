@@ -12,12 +12,16 @@ router.post("/getAssetByDepartment",assetController.getAssetByDepartment);
 
 router.get("/getChargerMap/:SiteID",assetController.getChargerMap);
 
-router.get("/getFaultCodeByCharger/:SiteID",assetController.getFaultCode);
+router.get("/getFaultCodeByCharger/:SiteID",assetController.getFaultCodeByCharger);
+
+router.get("/getFaultCodeByFaultCode/:SiteID",assetController.getFaultCodeByFaultCode);
 
 router.get("/getUnitCount/:SiteID",assetController.getUnitCount);
 
 router.post("/getMaintenanceStatusReport",assetController.getMaintenanceStatusReport);
 
 router.post("/getPowerUsage",assetController.getPowerUsage);
+
+router.get("/getMapDetails/:SiteID",assetController.getMapDetails);
 
 module.exports=router

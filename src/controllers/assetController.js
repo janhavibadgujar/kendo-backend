@@ -97,9 +97,26 @@ exports.getChargerMap=async(req,res)=>{
   });
 }
 
-exports.getFaultCode=async(req,res)=>{
+exports.getFaultCodeByCharger=async(req,res)=>{
   var result=[];
-  await assetHelper.getFaultCode(req.params.SiteID).then((response)=>{
+  await assetHelper.getFaultCodeByCharger(req.params.SiteID).then((response)=>{
+    const data={
+      Data:response.recordset,
+      Message:'',
+      Status:true
+    }
+    result.push(data)
+    res.send(result)
+  })
+  .catch((err) => {
+    console.log("Err---",err)
+    res.status(400).send({ message: `Can't find details` })
+  });
+}
+
+exports.getFaultCodeByFaultCode=async(req,res)=>{
+  var result=[];
+  await assetHelper.getFaultCodeByFaultCode(req.params.SiteID).then((response)=>{
     const data={
       Data:response.recordset,
       Message:'',
@@ -153,14 +170,42 @@ exports.getUnitCount=async(req,res)=>{
 
 exports.getMaintenanceStatusReport=async(req,res)=>{
   var result=[];
-  await assetHelper.getMaintenanceStatusReport(req.body.assetID).then((response)=>{
-      const data={
-        Data:response.recordset,
-        Message:'',
-        Status:true
-      }
-      result.push(data);
-        res.send(result)
+  var assetDetails=[];
+  await assetHelper.getMaintenanceStatusReport(req.body.assetID).then(async(response)=>{
+await assetHelper.getMaintenanceStatusDetails(req.body.assetID).then((details)=>{
+ details.recordset.forEach((element)=>{
+ const np= element.LastPerformed != null ?element.LastPerformed + element.Frequency :null
+ const unp =element.CurrentHMR != null? np - element.CurrentHMR : null
+
+ const data={
+  AssetName:element.AssetName,
+  AssetTypeName:element.AssetTypeName,
+  Status:element.Status,
+  LastPerformed:element.LastPerformed,
+  CurrentHMR:element.CurrentHMR,
+  Next_PM:np,
+  Until_NextPM:unp,
+  Frequency:element.Frequency
+ }
+
+ assetDetails.push(data)
+
+ })
+
+const data={
+  Data:{
+    details:assetDetails,
+    count:response.recordset
+  },
+  Message:'',
+  Status:true
+}
+result.push(data);
+  res.send(result)
+})
+.catch((err1) => {
+  console.log("err in details",err1)
+});
   })
   .catch((err) => {
     console.log("err",err)
@@ -170,6 +215,7 @@ exports.getMaintenanceStatusReport=async(req,res)=>{
 
 exports.getPowerUsage=async(req,res)=>{
   var result=[];
+  var currentHours=[];
   var today=new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -194,7 +240,11 @@ exports.getPowerUsage=async(req,res)=>{
   else
   {
     await assetHelper.getPowerUsageCurrent(req.body.SiteID,req.body.date).then((response)=>{
-      
+      currentHours = response.recordset.map(({ Hour, Charger, MaxkW }) => ({
+        Hour: Hour.split(' ')[1],
+        Charger,
+        MaxkW
+      }));
       const data={
         Data:response.recordset,
         Message:'',
@@ -202,10 +252,29 @@ exports.getPowerUsage=async(req,res)=>{
       }
       result.push(data);
         res.send(result)
-    })
-    .catch((err) => {
-      console.log("err",err)
-      res.status(400).send({ message: `Can't find details` })
-    });
+      })
+      .catch((err) => {
+        console.log("err",err)
+        res.status(400).send({ message: `Can't find details` })
+      });
   }
+}
+
+
+exports.getMapDetails=async(req,res)=>{
+  var result=[];
+  await assetHelper.getMapDetails(req.params.SiteID).then((response)=>{
+    console.log("length---",response.recordset.length)
+    var data={
+      Data:response.recordset,
+      Message:'',
+      Status:true
+    }
+    result.push(data);
+    res.send(result);
+  })
+  .catch((err) => {
+    console.log("err",err)
+    res.status(400).send({ message: `Can't find details` })
+  });
 }
