@@ -1,15 +1,13 @@
 const assetHelper = require('../helpers/assetHelper');
 
 exports.getById=async(req,res)=>{
-  var result=[];
   await assetHelper.getById(req.params.id).then((response)=>{
       const data={
         Data:response.recordset,
         Message:'',
         Status:true
       }
-      result.push(data)
-      res.send(result);
+      res.send(data);
   })
     .catch((err) => {
       res.status(400).send({ message: `Can't find details for ${req.params.id}` })
@@ -18,15 +16,13 @@ exports.getById=async(req,res)=>{
 }
 
 exports.getAll=async(req,res)=>{
-  var result=[];
   await assetHelper.getAll().then((response)=>{
     const data={
       Data:response.recordset,
       Message:'',
       Status:true
     }
-    result.push(data)
-    res.send(result);
+    res.send(data);
   })
     .catch((err) => {
       res.status(400).send({ message: "No Data" })
@@ -35,8 +31,6 @@ exports.getAll=async(req,res)=>{
 
 exports.getAssetBySiteId=async(req,res)=>{
   var result=[];
-  var custom=[];
-
   await assetHelper.getAssetBySiteId(req.body.SiteID).then(async(response)=>{
       response.recordset.forEach((element)=>{
        const data={
@@ -51,8 +45,7 @@ exports.getAssetBySiteId=async(req,res)=>{
         Message:"",
         Status:true
       }
-      custom.push(details)
-      res.send(custom)
+      res.send(details)
   })
     .catch((err) => {
       res.status(400).send({ message: `Can't find details for ${req.body.SiteID}` })
@@ -61,7 +54,6 @@ exports.getAssetBySiteId=async(req,res)=>{
 
 exports.getAssetByDepartment=async(req,res)=>{
   var assetIds=[];
-  var result=[];
   await assetHelper.getAssetByDepartment(req.body.department).then(async(response)=>{
       response.recordset.forEach((element)=>{
         assetIds.push(element.AssetID)
@@ -72,8 +64,7 @@ exports.getAssetByDepartment=async(req,res)=>{
           Message:'',
           Status:true
         }
-        result.push(data)
-        res.send(result);
+        res.send(data);
       })
   })
     .catch((err) => {
@@ -82,15 +73,13 @@ exports.getAssetByDepartment=async(req,res)=>{
 }
 
 exports.getChargerMap=async(req,res)=>{
-  var result=[];
   await assetHelper.getChargerMap(req.params.SiteID).then((response)=>{
     const data={
       Data:response.recordset,
       Message:'',
       Status:true
     }
-    result.push(data)
-    res.send(result)
+    res.send(data)
   })
   .catch((err) => {
     res.status(400).send({ message: `Can't find details` })
@@ -98,15 +87,13 @@ exports.getChargerMap=async(req,res)=>{
 }
 
 exports.getFaultCodeByCharger=async(req,res)=>{
-  var result=[];
   await assetHelper.getFaultCodeByCharger(req.params.SiteID).then((response)=>{
     const data={
       Data:response.recordset,
       Message:'',
       Status:true
     }
-    result.push(data)
-    res.send(result)
+    res.send(data)
   })
   .catch((err) => {
     console.log("Err---",err)
@@ -115,7 +102,6 @@ exports.getFaultCodeByCharger=async(req,res)=>{
 }
 
 exports.getFaultCodeByFaultCode=async(req,res)=>{
-  var result=[];
   await assetHelper.getFaultCodeByFaultCode(req.params.SiteID).then((response)=>{
     const data={
       Data:response.recordset,
@@ -123,7 +109,7 @@ exports.getFaultCodeByFaultCode=async(req,res)=>{
       Status:true
     }
     result.push(data)
-    res.send(result)
+    res.send(data)
   })
   .catch((err) => {
     console.log("Err---",err)
@@ -133,7 +119,6 @@ exports.getFaultCodeByFaultCode=async(req,res)=>{
 
 exports.getUnitCount=async(req,res)=>{
   var result=[];
-  var custom=[];
   var online=0;
   var offline=0;
   await assetHelper.getUnitCount(req.params.SiteID).then((response)=>{
@@ -159,8 +144,7 @@ exports.getUnitCount=async(req,res)=>{
       Message:'',
       Status:true
     }
-    custom.push(data1)
-    res.send(custom)
+    res.send(data1)
   })
   .catch((err) => {
     res.status(400).send({ message: `Can't find details` })
@@ -169,7 +153,6 @@ exports.getUnitCount=async(req,res)=>{
 
 
 exports.getMaintenanceStatusReport=async(req,res)=>{
-  var result=[];
   var assetDetails=[];
   await assetHelper.getMaintenanceStatusReport(req.body.assetID).then(async(response)=>{
 await assetHelper.getMaintenanceStatusDetails(req.body.assetID).then((details)=>{
@@ -192,7 +175,7 @@ await assetHelper.getMaintenanceStatusDetails(req.body.assetID).then((details)=>
 
  })
 
-const data={
+const data1={
   Data:{
     details:assetDetails,
     count:response.recordset
@@ -200,8 +183,8 @@ const data={
   Message:'',
   Status:true
 }
-result.push(data);
-  res.send(result)
+
+  res.send(data1)
 })
 .catch((err1) => {
   console.log("err in details",err1)
@@ -214,7 +197,6 @@ result.push(data);
 }
 
 exports.getPowerUsage=async(req,res)=>{
-  var result=[];
   var currentHours=[];
   var today=new Date();
   const year = today.getFullYear();
@@ -229,8 +211,7 @@ exports.getPowerUsage=async(req,res)=>{
         Message:'',
         Status:true
       }
-      result.push(data);
-        res.send(result)
+        res.send(data)
     })
     .catch((err) => {
       console.log("err",err)
@@ -250,8 +231,7 @@ exports.getPowerUsage=async(req,res)=>{
         Message:'',
         Status:true
       }
-      result.push(data);
-        res.send(result)
+        res.send(data)
       })
       .catch((err) => {
         console.log("err",err)
@@ -262,16 +242,14 @@ exports.getPowerUsage=async(req,res)=>{
 
 
 exports.getMapDetails=async(req,res)=>{
-  var result=[];
   await assetHelper.getMapDetails(req.params.SiteID).then((response)=>{
-    console.log("length---",response.recordset.length)
+    console.log("Length----",response.recordset.length)
     var data={
       Data:response.recordset,
       Message:'',
       Status:true
     }
-    result.push(data);
-    res.send(result);
+    res.send(data);
   })
   .catch((err) => {
     console.log("err",err)

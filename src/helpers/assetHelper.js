@@ -210,53 +210,66 @@ const q=`SELECT
 
 exports.getMapDetails=async(siteID)=>{
 
-const q=`SELECT a.ID, a.Name, a.Lon, a.Lat, 
-CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c1.EventData, 7, 4), 2)) AS Power1,
-CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c1.EventData, 5, 2), 2)) * 100 AS Voltage1,
-CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c1.EventData, 19, 1), 2)) AS SoC1,
-c1.Port as Port1, c1.ID as ID1,
-CASE WHEN c1.Port IS NULL THEN NULL 
-     WHEN c1.Ended IS NULL THEN 'Faulted' 
-     ELSE CASE c1.EventCode 
-          WHEN 1792 THEN 'Charging' 
-          WHEN 1794 THEN 'Equalizing' 
-          WHEN 1796 THEN 'Idling' 
-          ELSE 'N/A' 
-          END 
-     END AS Status1,
-CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c2.EventData, 7, 4), 2)) AS Power2,
-CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c2.EventData, 5, 2), 2)) * 100 AS Voltage2,
-CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c2.EventData, 19, 1), 2)) AS SoC2,
-c2.Port as Port2, c2.ID as ID2,
-CASE WHEN c2.Port IS NULL THEN NULL 
-     WHEN c2.Ended IS NULL THEN 'Faulted' 
-     ELSE CASE c2.EventCode 
-          WHEN 1792 THEN 'Charging' 
-          WHEN 1794 THEN 'Equalizing' 
-          WHEN 1796 THEN 'Idling' 
-          ELSE 'N/A' 
-          END 
-     END AS Status2
-FROM Asset a
-JOIN AssetSite jas ON a.ID = jas.AssetID
-LEFT JOIN (
-  SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, Ended, EventCode, ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
-  FROM AlarmChargeDetail acd
-  JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
-  WHERE acd.Port = 1
-  ) c1 ON a.ID = c1.AssetID AND c1.rn = 1
-  LEFT JOIN (
-    SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, Ended, EventCode, ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
-    FROM AlarmChargeDetail acd
-    JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
-    WHERE acd.Port = 2
-    ) c2 ON a.ID = c2.AssetID AND c2.rn = 1
-WHERE jas.SiteID= '${siteID}' 
-AND a.System IN (5,6,7,11)
-AND a.Lon IS NOT NULL
-AND a.Lat IS NOT NULL;
+const q=`SELECT a.ID as AssetID, a.Name, a.Lon, a.Lat, 
+          CASE 
+              WHEN u1.UniqueID = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2) AND a.UnitID = u1.ID
+                  THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, ''))
+              ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, '') 
+          END AS Paired1,
+          CASE 
+              WHEN u2.UniqueID = CONVERT(VARBINARY(8), c2.VirtualUniqueID, 2) AND a.UnitID = u2.ID
+                  THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, ''))
+              ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, '')
+          END AS Paired2,
+          CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c1.EventData, 7, 4), 2)) * 100 AS Power1,
+          CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c1.EventData, 5, 2), 2)) * 100 AS Voltage1,
+          CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c1.EventData, 19, 1), 2)) AS SoC1,
+          c1.Port as Port1, c1.ID as ID1,
+          CASE WHEN c1.Port IS NOT NULL AND c1.Ended IS NULL THEN 'Faulted'
+            WHEN c1.Port IS NULL THEN NULL
+            ELSE CASE c1.EventCode
+            WHEN 1792 THEN 'Charging'
+            WHEN 1794 THEN 'Equalizing'
+            WHEN 1796 THEN 'Idling'
+            END
+          END AS Status1,
+          CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c2.EventData, 7, 4), 2)) * 100 AS Power2,
+          CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c2.EventData, 5, 2), 2)) * 100 AS Voltage2,
+          CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c2.EventData, 19, 1), 2)) AS SoC2,
+          c2.Port as Port2, c2.ID as ID2,
+          CASE WHEN c2.Port IS NOT NULL AND c2.Ended IS NULL THEN 'Faulted'
+            WHEN c1.Port IS NULL THEN NULL
+            ELSE CASE c2.EventCode
+            WHEN 1792 THEN 'Charging'
+            WHEN 1794 THEN 'Equalizing'
+            WHEN 1796 THEN 'Idling'
+            END
+          END AS Status2
+          FROM Asset a
+          JOIN AssetSite jas ON a.ID = jas.AssetID
+          LEFT JOIN (
+            SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, ac.Ended, ac.EventCode, acd.BatteryModule, acd.VirtualUniqueID, u.ID AS UnitID, u.UniqueID AS Converted, 
+              ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
+              FROM AlarmChargeDetail acd
+              JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
+              LEFT JOIN Unit u ON acd.UnitID = u.ID
+            WHERE acd.Port = 1
+          ) c1 ON a.ID = c1.AssetID AND c1.rn = 1
+          LEFT JOIN Unit u1 ON c1.UnitID = u1.ID AND c1.Converted = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2)
+          LEFT JOIN (
+            SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, ac.Ended, ac.EventCode, acd.BatteryModule, acd.VirtualUniqueID, u.ID AS UnitID, u.UniqueID AS Converted, 
+              ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
+              FROM AlarmChargeDetail acd
+              JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
+              LEFT JOIN Unit u ON acd.UnitID = u.ID
+            WHERE acd.Port = 2
+          ) c2 ON a.ID = c2.AssetID AND c2.rn = 1
+          LEFT JOIN Unit u2 ON c2.UnitID = u2.ID AND c2.Converted = CONVERT(VARBINARY(8), c2.VirtualUniqueID, 2)
+          WHERE jas.SiteID = '${siteID}' 
+          AND a.System IN (5,6,7,11)
+          AND a.Lon IS NOT NULL
+          AND a.Lat IS NOT NULL;
 `
-
     return await pool.request()
             .query(q)    
 }
