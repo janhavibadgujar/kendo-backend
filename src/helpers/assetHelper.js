@@ -238,7 +238,7 @@ const q=`SELECT a.ID as AssetID, a.Name, a.Lon, a.Lat,
           CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c2.EventData, 19, 1), 2)) AS SoC2,
           c2.Port as Port2, c2.ID as ID2,
           CASE WHEN c2.Port IS NOT NULL AND c2.Ended IS NULL THEN 'Faulted'
-            WHEN c1.Port IS NULL THEN NULL
+            WHEN c2.Port IS NULL THEN NULL
             ELSE CASE c2.EventCode
             WHEN 1792 THEN 'Charging'
             WHEN 1794 THEN 'Equalizing'
