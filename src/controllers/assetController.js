@@ -243,32 +243,6 @@ exports.getPowerUsage=async(req,res)=>{
 exports.getMapDetails=async(req,res)=>{
   await assetHelper.getMapDetails(req.params.SiteID).then(async(response)=>{
     console.log("Length----",response.recordset.length)
-  //  await response.recordset.forEach((element)=>{
-  //   assetID.push(element.AssetID)
-  //   })
-
-   // await assetHelper.getMapStatus(assetID).then((details)=>{     
-      // var q = response.recordset.map(function(asset) {
-      //   var status = details.recordset.find(function(item) {
-      //     return item.AssetID === asset.AssetID;
-      //   });
-      //   if (asset.Port1 !== null) {
-      //     asset.Status1 = asset.Status1 || 'Faulted';
-      //   } else {
-      //     asset.Status1 = null;
-      //   }
-      //   if (asset.Port2 !== null) {
-      //     asset.Status2 = asset.Status2 || 'Faulted';
-      //   } else {
-      //     asset.Status2 = null;
-      //   }
-      //   if ((asset.Port1 !== null && asset.Status1 !== null) && (asset.Port2 !== null && asset.Status2 !== null)) {
-      //     asset.Status1 = status.Status1 || asset.Status1;
-      //     asset.Status2 = status.Status2 || asset.Status2;
-      //   }
-      //   return asset;
-      // });
-      
 
       var data={
         Data:response.recordset,
@@ -276,8 +250,6 @@ exports.getMapDetails=async(req,res)=>{
         Status:true
       }
       res.send(data);
-   // })
-    
   })
   .catch((err) => {
     console.log("err",err)

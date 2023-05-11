@@ -77,8 +77,41 @@ exports.getFaultCodeByFaultCode=async(siteID)=>{
             AND ac.EventCode <= 1165
             GROUP BY LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8);`
 
+const q1=`SELECT 
+CASE LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
+  WHEN '00000001' THEN 'Charger Power Section Fault'
+  WHEN '00000002' THEN 'Charger High Temperature'
+  WHEN '00000004' THEN 'Invalid Battery Parameters'
+  WHEN '00000008' THEN 'Charger Cannot Control Output Current'
+  WHEN '00000010' THEN 'High Battery Temperature'
+  WHEN '00000020' THEN 'Low Battery Temperature'
+  WHEN '00000040' THEN 'High Battery Volatge'
+  WHEN '00000080' THEN 'Low Battery Volatge'
+  WHEN '00000100' THEN 'High Battery Resistance'
+  WHEN '00000200' THEN 'Battery Temperature Sensor Out of Range'
+  WHEN '00000400' THEN 'CAN Communication Fault to Battery Module'
+  WHEN '00000800' THEN 'Pilot Fault to Battery Module'
+  WHEN '00001000' THEN 'Charge Timeout Exceeded'
+  WHEN '00002000' THEN 'Charge Ah Limit Exceeded'
+  WHEN '00004000' THEN 'Contactor Fault'
+  WHEN '00008000' THEN 'Battery Module Fault'
+  WHEN '00010000' THEN 'No Battery Voltage Detected'
+  WHEN '00020000' THEN 'No Charge Profile Created for Measured Battery Voltage'
+  ELSE LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
+END AS Name,
+COUNT(*) AS Count
+FROM 
+AlarmCharger ac
+WHERE 
+ac.SiteID = '${siteID}'
+AND ac.EventCode >= 1152
+AND ac.EventCode <= 1165
+GROUP BY 
+LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
+`
+
     return await pool.request()
-    .query(q)
+    .query(q1)
 }
 
 exports.getUnitCount=async(siteID)=>{
