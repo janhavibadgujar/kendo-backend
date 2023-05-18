@@ -7,8 +7,8 @@ const config = {
     database: process.env.dbName,
     options: {
         encrypt: false,
-
-    }
+    },
+    requestTimeout: 100000000
 };
 
 const pool = new sql.ConnectionPool(config);

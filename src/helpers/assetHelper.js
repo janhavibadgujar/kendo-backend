@@ -89,7 +89,7 @@ CASE LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
   WHEN '00000080' THEN 'Low Battery Volatge'
   WHEN '00000100' THEN 'High Battery Resistance'
   WHEN '00000200' THEN 'Battery Temperature Sensor Out of Range'
-  WHEN '00000400' THEN 'CAN Communication Fault to Battery Module'
+  WHEN '00000400' THEN 'Can Communication Fault to Battery Module'
   WHEN '00000800' THEN 'Pilot Fault to Battery Module'
   WHEN '00001000' THEN 'Charge Timeout Exceeded'
   WHEN '00002000' THEN 'Charge Ah Limit Exceeded'
@@ -242,147 +242,105 @@ const q=`SELECT
 }
 
 exports.getMapDetails=async(siteID)=>{
-const w=`SELECT a.ID as AssetID, a.Name, a.Lon, a.Lat, c1.Port as Port1, c1.ID as ID1,c2.Port as Port2, c2.ID as ID2, c1.status as Status1,c2.status as Status2,
-            CASE 
-            WHEN u1.UniqueID = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2) AND a.UnitID = u1.ID
-                THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, ''))
-            ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, '') 
-            END AS Paired1,
-            CASE 
-            WHEN u2.UniqueID = CONVERT(VARBINARY(8), c2.VirtualUniqueID, 2) AND a.UnitID = u2.ID
-                THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, ''))
-            ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, '')
-            END AS Paired2,
-            CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c1.EventData, 7, 4), 2)) * 100 AS Power1,
-            CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c1.EventData, 5, 2), 2)) * 100 AS Voltage1,
-            CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c1.EventData, 19, 1), 2)) AS SoC1,
-
-            CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c2.EventData, 7, 4), 2)) * 100 AS Power2,
-            CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c2.EventData, 5, 2), 2)) * 100 AS Voltage2,
-            CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c2.EventData, 19, 1), 2)) AS SoC2
-
-        FROM Asset a
-        JOIN AssetSite jas ON a.ID = jas.AssetID
-        LEFT JOIN (
-            SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, 
-                    CASE 
-                    WHEN latest.Ended IS NULL THEN 'Faulted'
-                    WHEN latest.EventCode = 1792 THEN 'Charging'
-                    WHEN latest.EventCode = 1794 THEN 'Equalizing'
-                    WHEN latest.EventCode = 1796 THEN 'Idling'
-                    END AS status, 
-                    acd.BatteryModule, acd.VirtualUniqueID, u.ID AS UnitID, u.UniqueID AS Converted, 
-                    ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
-                    FROM AlarmChargeDetail acd
-                    JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
-                    LEFT JOIN Unit u ON acd.UnitID = u.ID
-                        LEFT JOIN (
-                        SELECT AssetID, Port, Ended, EventCode
-                        FROM (
-                        SELECT AssetID, Port, Ended, EventCode, ROW_NUMBER() OVER (PARTITION BY AssetID, Port ORDER BY Date DESC) AS rn
-                        FROM AlarmCharger
-                        WHERE Ended IS NOT NULL AND EventCode IN (1792, 1794, 1796)
-                        ) latest
-                        WHERE rn = 1
-                        ) latest ON acd.AssetID = latest.AssetID AND acd.Port = latest.Port
-                        WHERE acd.Port = 1
-        ) c1 ON a.ID = c1.AssetID AND c1.rn = 1
-        LEFT JOIN Unit u1 ON c1.UnitID = u1.ID AND c1.Converted = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2)
-
-        LEFT JOIN (
-            SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, 
-                CASE 
-                WHEN latest.Ended IS NULL THEN 'Faulted'
-                WHEN latest.EventCode = 1792 THEN 'Charging'
-                WHEN latest.EventCode = 1794 THEN 'Equalizing'
-                WHEN latest.EventCode = 1796 THEN 'Idling'
-                END AS status, 
-            acd.BatteryModule, acd.VirtualUniqueID, u.ID AS UnitID, u.UniqueID AS Converted, 
-            ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
-            FROM AlarmChargeDetail acd
-            JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
-            LEFT JOIN Unit u ON acd.UnitID = u.ID
-            LEFT JOIN (
-            SELECT AssetID, Port, Ended, EventCode
-            FROM (
-            SELECT AssetID, Port, Ended, EventCode, ROW_NUMBER() OVER (PARTITION BY AssetID, Port ORDER BY Date DESC) AS rn
-            FROM AlarmCharger
-            WHERE Ended IS NOT NULL AND EventCode IN (1792, 1794, 1796)
-            ) latest
-            WHERE rn = 1
-            ) latest ON acd.AssetID = latest.AssetID AND acd.Port = latest.Port
-            WHERE acd.Port = 2
-        ) c2 ON a.ID = c2.AssetID AND c2.rn = 1
-        LEFT JOIN Unit u2 ON c2.UnitID = u2.ID AND c2.Converted = CONVERT(VARBINARY(8), c2.VirtualUniqueID, 2)
+ const q=`SELECT a.ID as AssetID, a.Name, a.Lon, a.Lat, 
+    CASE 
+        WHEN u1.UniqueID = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2) AND a.UnitID = u1.ID
+            THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, ''))
+        ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, '') 
+    END AS Paired1,
+    CASE 
+        WHEN u2.UniqueID = CONVERT(VARBINARY(8), c2.VirtualUniqueID, 2) AND a.UnitID = u2.ID
+            THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, ''))
+        ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, '')
+    END AS Paired2,
+    CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c1.EventData, 7, 4), 2)) * 100 AS Power1,
+    CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c1.EventData, 5, 2), 2)) * 100 AS Voltage1,
+    CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c1.EventData, 19, 1), 2)) AS SoC1,
+    c1.Port as Port1, c1.ID as ID1,
+   
+    CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c2.EventData, 7, 4), 2)) * 100 AS Power2,
+    CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c2.EventData, 5, 2), 2)) * 100 AS Voltage2,
+    CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c2.EventData, 19, 1), 2)) AS SoC2,
+    c2.Port as Port2, c2.ID as ID2
+    FROM Asset a
+    JOIN AssetSite jas ON a.ID = jas.AssetID
+    LEFT JOIN (
+      SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, acd.BatteryModule, acd.VirtualUniqueID, u.ID AS UnitID, u.UniqueID AS Converted, 
+        ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
+        FROM AlarmChargeDetail acd
+        LEFT JOIN Unit u ON acd.UnitID = u.ID
+      WHERE acd.Port = 1
+    ) c1 ON a.ID = c1.AssetID AND c1.rn = 1
+    LEFT JOIN Unit u1 ON c1.UnitID = u1.ID AND c1.Converted = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2)
+    LEFT JOIN (
+      SELECT acd.AssetID, acd.Port, acd.ID, acd.EventData, acd.BatteryModule, acd.VirtualUniqueID, u.ID AS UnitID, u.UniqueID AS Converted, 
+        ROW_NUMBER() OVER (PARTITION BY acd.AssetID, acd.Port ORDER BY acd.Date DESC) AS rn
+        FROM AlarmChargeDetail acd
+        LEFT JOIN Unit u ON acd.UnitID = u.ID
+      WHERE acd.Port = 2
+    ) c2 ON a.ID = c2.AssetID AND c2.rn = 1
+    LEFT JOIN Unit u2 ON c2.UnitID = u2.ID AND c2.Converted = CONVERT(VARBINARY(8), c2.VirtualUniqueID, 2)
     WHERE jas.SiteID = '${siteID}' 
     AND a.System IN (5,6,7,11)
     AND a.Lon IS NOT NULL
-    AND a.Lat IS NOT NULL;`
-
-const q1=`Select a.ID As AssetID, a.Name, a.Lon, a.Lat, c1.Port As Port1, c1.ID As ID1,
-c2.Port As Port2, c2.ID As ID2, c1.status As Status1, c2.status As Status2,
-Case
-  When u1.UniqueID = Convert(VARBINARY(8),c1.VirtualUniqueID,2) And a.UnitID = u1.ID Then Coalesce(a.Name,Stuff(Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c1.BatteryModule As BIGINT)),2), 1, PatIndex('%[^0]%',Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c1.BatteryModule As BIGINT)),2)) - 1, ''))
-  Else Stuff(Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c1.BatteryModule As BIGINT)),2), 1, PatIndex('%[^0]%',Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c1.BatteryModule As BIGINT)),2)) - 1, '')
-End As Paired1, 
-Case
-  When u2.UniqueID = Convert(VARBINARY(8),c2.VirtualUniqueID,2) And a.UnitID = u2.ID Then Coalesce(a.Name,Stuff(Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c2.BatteryModule As BIGINT)),2), 1, PatIndex('%[^0]%',Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c2.BatteryModule As BIGINT)),2)) - 1, ''))
-  Else Stuff(Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c2.BatteryModule As BIGINT)),2), 1, PatIndex('%[^0]%',Convert(VARCHAR(50),Convert(VARBINARY(8),Cast(c2.BatteryModule As BIGINT)),2)) - 1, '')
-End As Paired2, 
-Convert(INT,Convert(VARBINARY(4),SubString(c1.EventData, 7,4),2)) * 100 As Power1,
-Convert(INT,Convert(VARBINARY(2),SubString(c1.EventData, 5, 2),2)) *100 As Voltage1, 
-Convert(INT,Convert(VARBINARY(1),SubString(c1.EventData, 19,1),2)) As SoC1,
-
-Convert(INT,Convert(VARBINARY(4),SubString(c2.EventData, 7,4),2)) * 100 As Power2,
-Convert(INT,Convert(VARBINARY(2),SubString(c2.EventData, 5, 2),2)) *100 As Voltage2, 
-Convert(INT,Convert(VARBINARY(1),SubString(c2.EventData, 19,1),2)) As SoC2 
-From Asset a
-Inner Join AssetSite jas On a.ID = jas.AssetID
-Left Join (Select acd.AssetID, acd.Port, acd.ID, acd.EventData, Case
-      When latest.Ended Is Null Then 'Faulted'
-      When latest.EventCode = 1792 Then 'Charging'
-      When latest.EventCode = 1794 Then 'Equalizing'
-      When latest.EventCode = 1796 Then 'Idling'
-    End As status, acd.BatteryModule, acd.VirtualUniqueID, u.ID As UnitID,
-    u.UniqueID As Converted, Row_Number() Over (Partition By acd.AssetID,
-    acd.Port Order By acd.Date Desc) As rn From AlarmChargeDetail acd
-    Inner Join AlarmCharger ac On acd.AssetID = ac.AssetID And
-        acd.Port = ac.Port
-    Left Join Unit u On acd.UnitID = u.ID
-    Left Join (Select latest.AssetID, latest.Port, latest.Ended,
-        latest.EventCode
-      From (Select AssetID, Port, Ended, EventCode, Row_Number() Over
-            (Partition By AssetID, Port Order By Date Desc) As rn
-          From AlarmCharger
-          Where Ended Is Not Null And EventCode In (1792, 1794, 1796)) latest
-      Where latest.rn = 1) latest On acd.AssetID = latest.AssetID And
-        acd.Port = latest.Port
-  Where acd.Port = 1) c1 On a.ID = c1.AssetID And c1.rn = 1
-Left Join Unit u1 On c1.UnitID = u1.ID And
-    c1.Converted = Convert(VARBINARY(8),c1.VirtualUniqueID,2)
-Left Join (Select acd.AssetID, acd.Port, acd.ID, acd.EventData, Case
-      When latest.Ended Is Null Then 'Faulted'
-      When latest.EventCode = 1792 Then 'Charging'
-      When latest.EventCode = 1794 Then 'Equalizing'
-      When latest.EventCode = 1796 Then 'Idling'
-    End As status, acd.BatteryModule, acd.VirtualUniqueID, u.ID As UnitID,
-    u.UniqueID As Converted, Row_Number() Over (Partition By acd.AssetID,
-    acd.Port Order By acd.Date Desc) As rn From AlarmChargeDetail acd
-    Inner Join AlarmCharger ac On acd.AssetID = ac.AssetID And
-        acd.Port = ac.Port
-    Left Join Unit u On acd.UnitID = u.ID
-    Left Join (Select latest.AssetID, latest.Port, latest.Ended,
-        latest.EventCode
-      From (Select AssetID, Port, Ended, EventCode, Row_Number() Over
-            (Partition By AssetID, Port Order By Date Desc) As rn
-          From AlarmCharger
-          Where Ended Is Not Null And EventCode In (1792, 1794, 1796)) latest
-      Where latest.rn = 1) latest On acd.AssetID = latest.AssetID And
-        acd.Port = latest.Port
-  Where acd.Port = 2) c2 On a.ID = c2.AssetID And c2.rn = 1
-Left Join Unit u2 On c2.UnitID = u2.ID And
-    c2.Converted = Convert(VARBINARY(8),c2.VirtualUniqueID,2)
-Where jas.SiteID = '${siteID}' And a.System In (5, 6, 7, 11) `    
+    AND a.Lat IS NOT NULL;
+`
     return await pool.request()
-            .query(w)    
+            .query(q)    
+}
+
+exports.getMap=async(siteID)=>{
+
+
+    const q=`SELECT a.ID as AssetID, c1.status as Status1, c2.status as Status2
+    FROM Asset a
+    JOIN AssetSite jas ON a.ID = jas.AssetID
+    OUTER APPLY (
+        SELECT TOP 1 acd.AssetID, acd.Port, acd.ID, acd.EventData,
+        CASE 
+            WHEN latest.Ended IS NULL THEN 'Faulted'
+            WHEN latest.EventCode = 1792 THEN 'Charging'
+            WHEN latest.EventCode = 1794 THEN 'Equalizing'
+            WHEN latest.EventCode = 1796 THEN 'Idling'
+        END AS status, 
+        acd.BatteryModule, acd.VirtualUniqueID
+        FROM AlarmChargeDetail acd
+        JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
+        OUTER APPLY (
+            SELECT TOP 1 AssetID, Port, Ended, EventCode
+            FROM AlarmCharger
+            WHERE AssetID = acd.AssetID AND Port = acd.Port AND Ended IS NOT NULL AND EventCode IN (1792, 1794, 1796)
+            ORDER BY Date DESC
+        ) latest
+        WHERE acd.Port = 1 AND acd.AssetID = a.ID
+        ORDER BY acd.Date DESC
+    ) c1
+    OUTER APPLY (
+        SELECT TOP 1 acd.AssetID, acd.Port, acd.ID, acd.EventData,
+        CASE 
+            WHEN latest.Ended IS NULL THEN 'Faulted'
+            WHEN latest.EventCode = 1792 THEN 'Charging'
+            WHEN latest.EventCode = 1794 THEN 'Equalizing'
+            WHEN latest.EventCode = 1796 THEN 'Idling'
+        END AS status, 
+        acd.BatteryModule, acd.VirtualUniqueID
+        FROM AlarmChargeDetail acd
+        JOIN AlarmCharger ac ON acd.AssetID = ac.AssetID AND acd.Port = ac.Port
+        OUTER APPLY (
+            SELECT TOP 1 AssetID, Port, Ended, EventCode
+            FROM AlarmCharger
+            WHERE AssetID = acd.AssetID AND Port = acd.Port AND Ended IS NOT NULL AND EventCode IN (1792, 1794, 1796)
+            ORDER BY Date DESC
+        ) latest
+        WHERE acd.Port = 2 AND acd.AssetID = a.ID
+        ORDER BY acd.Date DESC
+    ) c2
+    WHERE jas.SiteID = '${siteID}' 
+    AND a.System IN (5,6,7,11)
+    AND a.Lon IS NOT NULL
+    AND a.Lat IS NOT NULL;
+    `
+    
+    return await pool.request()
+            .query(q)
 }

@@ -220,11 +220,11 @@ exports.getPowerUsage=async(req,res)=>{
   else
   {
     await assetHelper.getPowerUsageCurrent(req.body.SiteID,req.body.date).then((response)=>{
-      currentHours = response.recordset.map(({ Hour, Charger, MaxkW }) => ({
-        Hour: Hour.split(' ')[1],
-        Charger,
-        MaxkW
-      }));
+      // currentHours = response.recordset.map(({ Hour, Charger, MaxkW }) => ({
+      //   Hour: Hour.split(' ')[1],
+      //   Charger,
+      //   MaxkW
+      // }));
       const data={
         Data:response.recordset,
         Message:'',
@@ -243,14 +243,26 @@ exports.getPowerUsage=async(req,res)=>{
 exports.getMapDetails=async(req,res)=>{
   await assetHelper.getMapDetails(req.params.SiteID).then(async(response)=>{
     console.log("Length----",response.recordset.length)
+    await assetHelper.getMap(req.params.SiteID).then(async(details)=>{
 
+      const result = response.recordset.map(obj => {
+        const match = details.recordset.find(item => item.AssetID === obj.AssetID);
+        
+        if (match) {
+            return { ...obj, Status1: match.Status1, Status2: match.Status2 };
+        }
+        
+        return obj;
+      });
       var data={
-        Data:response.recordset,
+        Data:result,
         Message:'',
         Status:true
       }
       res.send(data);
-  })
+    })
+      
+ })
   .catch((err) => {
     console.log("err",err)
     res.status(400).send({ message: `Can't find details` })
