@@ -52,12 +52,8 @@ exports.getChargerMap=async(siteID)=>{
 }
 
 exports.getFaultCodeByCharger=async(siteID)=>{
-    const q=`SELECT COUNT(*) as TotalCount 
-    FROM Asset a
-    INNER JOIN AssetSite as2 on as2.AssetID =a.ID 
-    WHERE a.[System] IN (5,6,7) AND as2.SiteID ='${siteID}';`
-
-    const q1=`SELECT a.ID, a.Name, COUNT(*) AS Count
+    
+    const q=`SELECT a.ID, a.Name, COUNT(*) AS Count
     FROM Asset a
     JOIN AlarmCharger ac ON ac.AssetID = a.ID
     WHERE ac.SiteID = '${siteID}'
@@ -66,18 +62,12 @@ exports.getFaultCodeByCharger=async(siteID)=>{
     GROUP BY a.ID , a.Name;`
     
     return await pool.request()
-    .query(q1)
+    .query(q)
 }
 
 exports.getFaultCodeByFaultCode=async(siteID)=>{
-    const q=`SELECT LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8) AS Name , count(*) as Count
-            FROM AlarmCharger ac 
-            WHERE ac.SiteID = '${siteID}'
-            AND ac.EventCode >= 1152
-            AND ac.EventCode <= 1165
-            GROUP BY LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8);`
-
-const q1=`SELECT 
+   
+    const q=`SELECT 
 CASE LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
   WHEN '00000001' THEN 'Charger Power Section Fault'
   WHEN '00000002' THEN 'Charger High Temperature'
@@ -111,7 +101,7 @@ LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
 `
 
     return await pool.request()
-    .query(q1)
+    .query(q)
 }
 
 exports.getUnitCount=async(siteID)=>{
@@ -120,8 +110,16 @@ exports.getUnitCount=async(siteID)=>{
     INNER JOIN AssetSite ON Asset.ID = AssetSite.AssetID
     WHERE AssetSite.SiteID = '${siteID}'`
 
+    const q1=`SELECT COUNT(*) AS OnlineCount,
+    (SELECT COUNT(*) FROM Asset INNER JOIN AssetSite ON Asset.ID = AssetSite.AssetID WHERE AssetSite.SiteID = '${siteID}') AS OfflineCount
+FROM Asset 
+INNER JOIN AssetSite ON Asset.ID = AssetSite.AssetID
+WHERE AssetSite.SiteID = '${siteID}'
+AND LastUpdate >= DATEADD(MINUTE, -5, GETDATE())
+`
+
     return await pool.request()
-    .query(q)
+    .query(q1)
 }
 
 exports.getMaintenanceStatusReport=async(assetIds)=>{
@@ -142,59 +140,59 @@ exports.getMaintenanceStatusReport=async(assetIds)=>{
 
 exports.getMaintenanceStatusDetails=async(assetIds)=>{
     const assetIdValues = assetIds.map(asset => `CONVERT(uniqueidentifier, '${asset}')`).join(',');
-const q5=`SELECT 
-a.Name AS AssetName,
-a.AssetTypeName,
-a.Frequency,
-(
-    SELECT TOP 1 
-        CASE 
-            WHEN EventCode IN (204, 778) THEN 'Overdue' 
-            WHEN EventCode IN (779, 780) THEN 'Upcoming' 
-            WHEN EventCode = 1289 THEN 'Completed' 
-        END AS Status 
-    FROM Alarm 
-    WHERE AssetID = a.ID AND EventCode IN (204, 778, 779, 780, 1289)
-    ORDER BY Date DESC
-) AS Status,
-(
-    SELECT TOP 1 
-        CAST(ROUND(CAST(SUBSTRING(CONVERT(varbinary, HMRData), 1, 4) AS int) / 3600.0, 0) AS int)
-    FROM AlarmHMR h
-    WHERE AssetID = a.ID AND CONVERT(date, Date) = (
+    const q=`SELECT 
+    a.Name AS AssetName,
+    a.AssetTypeName,
+    a.Frequency,
+    (
         SELECT TOP 1 
-            CONVERT(date, Date) 
+            CASE 
+                WHEN EventCode IN (204, 778) THEN 'Overdue' 
+                WHEN EventCode IN (779, 780) THEN 'Upcoming' 
+                WHEN EventCode = 1289 THEN 'Completed' 
+            END AS Status 
         FROM Alarm 
-        WHERE AssetID = a.ID AND EventCode = 1289
+        WHERE AssetID = a.ID AND EventCode IN (204, 778, 779, 780, 1289)
         ORDER BY Date DESC
-    )
-    ORDER BY Date DESC
-        
-) AS LastPerformed,
-(
-    SELECT TOP 1
-        CAST(ROUND(CAST(SUBSTRING(CONVERT(varbinary, h.HMRData), 1, 4) AS int) / 3600.0, 0) AS int)
-    FROM 
-        AlarmHMR h 
-    WHERE 
-        h.AssetID = a.ID 
-        AND EXISTS (
-            SELECT 1 FROM Alarm WHERE AssetID = a.ID AND EventCode IN (204,778,779,780,1289)
+    ) AS Status,
+    (
+        SELECT TOP 1 
+            CAST(ROUND(CAST(SUBSTRING(CONVERT(varbinary, HMRData), 1, 4) AS int) / 3600.0, 0) AS int)
+        FROM AlarmHMR h
+        WHERE AssetID = a.ID AND CONVERT(date, Date) = (
+            SELECT TOP 1 
+                CONVERT(date, Date) 
+            FROM Alarm 
+            WHERE AssetID = a.ID AND EventCode = 1289
+            ORDER BY Date DESC
         )
-    ORDER BY 
-        h.Date DESC 
-) AS CurrentHMR
-FROM 
-Asset a 
-WHERE 
-a.ID IN (${assetIdValues})
-`
+        ORDER BY Date DESC
+            
+    ) AS LastPerformed,
+    (
+        SELECT TOP 1
+            CAST(ROUND(CAST(SUBSTRING(CONVERT(varbinary, h.HMRData), 1, 4) AS int) / 3600.0, 0) AS int)
+        FROM 
+            AlarmHMR h 
+        WHERE 
+            h.AssetID = a.ID 
+            AND EXISTS (
+                SELECT 1 FROM Alarm WHERE AssetID = a.ID AND EventCode IN (204,778,779,780,1289)
+            )
+        ORDER BY 
+            h.Date DESC 
+    ) AS CurrentHMR
+    FROM 
+    Asset a 
+    WHERE 
+    a.ID IN (${assetIdValues})
+    `
 return await pool.request()
-            .query(q5)
+            .query(q)
 }
 
 exports.getPowerUsage = async(siteID,date)=>{
-      const q3=`SELECT FORMAT(number, '00') + ':00' AS Hour,
+      const q=`SELECT FORMAT(number, '00') + ':00' AS Hour,
       COUNT(CASE WHEN AlarmPowerUsage.InstantaneouskW > 0 THEN 1 END) AS Charger,
       COALESCE(MAX(AlarmPowerUsage.InstantaneouskW), 0) AS MaxkW
     FROM master..spt_values
@@ -208,7 +206,7 @@ exports.getPowerUsage = async(siteID,date)=>{
 
     
     return await pool.request()
-            .query(q3)
+            .query(q)
 }
 
 exports.getPowerUsageCurrent=async(siteID,date)=>{
@@ -242,7 +240,7 @@ const q=`SELECT
 }
 
 exports.getMapDetails=async(siteID)=>{
- const q=`SELECT a.ID as AssetID, a.Name, a.Lon, a.Lat, 
+ const q=`SELECT a.ID as AssetID, a.LastUpdate as LastSeen, a.Name, a.Lon, a.Lat, 
     CASE 
         WHEN u1.UniqueID = CONVERT(VARBINARY(8), c1.VirtualUniqueID, 2) AND a.UnitID = u1.ID
             THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c1.BatteryModule AS BIGINT)), 2)) - 1, ''))
@@ -290,9 +288,7 @@ exports.getMapDetails=async(siteID)=>{
 }
 
 exports.getMap=async(siteID)=>{
-
-
-    const q=`SELECT a.ID as AssetID, c1.status as Status1, c2.status as Status2
+const q=`SELECT a.ID as AssetID, c1.status as Status1, c2.status as Status2
     FROM Asset a
     JOIN AssetSite jas ON a.ID = jas.AssetID
     OUTER APPLY (
@@ -340,7 +336,6 @@ exports.getMap=async(siteID)=>{
     AND a.Lon IS NOT NULL
     AND a.Lat IS NOT NULL;
     `
-    
     return await pool.request()
             .query(q)
 }

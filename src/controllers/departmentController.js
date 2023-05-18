@@ -28,7 +28,6 @@ exports.getDepartmentByCompanyId=async(req,res)=>{
             Message:'',
             Status:true
         }
-        result.push(data)
         res.send(data)
     })
     .catch((err) => {

@@ -118,24 +118,10 @@ exports.getFaultCodeByFaultCode=async(req,res)=>{
 
 exports.getUnitCount=async(req,res)=>{
   var result=[];
-  var online=0;
-  var offline=0;
   await assetHelper.getUnitCount(req.params.SiteID).then((response)=>{
-    response.recordset.forEach((element)=>{
-      const now = new Date();
-      const dateToCheck = new Date(element.LastUpdate);
-      const diffInMs = now - dateToCheck;
-      if (diffInMs <= 300000) {
-        online = online + 1;
-      } 
-      else 
-      {
-        offline = offline + 1;
-      }
-    })
     const data={
-      onlineCount:online,
-      offlineCount:offline,
+      onlineCount:response.recordset[0].OnlineCount,
+      offlineCount:response.recordset[0].OfflineCount,
     }
     result.push(data)
     const data1={
@@ -154,40 +140,39 @@ exports.getUnitCount=async(req,res)=>{
 exports.getMaintenanceStatusReport=async(req,res)=>{
   var assetDetails=[];
   await assetHelper.getMaintenanceStatusReport(req.body.assetID).then(async(response)=>{
-await assetHelper.getMaintenanceStatusDetails(req.body.assetID).then((details)=>{
- details.recordset.forEach((element)=>{
- const np= element.LastPerformed != null ?element.LastPerformed + element.Frequency :null
- const unp =element.CurrentHMR != null? np - element.CurrentHMR : null
+    await assetHelper.getMaintenanceStatusDetails(req.body.assetID).then((details)=>{
+      details.recordset.forEach((element)=>{
+      const np= element.LastPerformed != null ?element.LastPerformed + element.Frequency :null
+      const unp =element.CurrentHMR != null? np - element.CurrentHMR : null
 
- const data={
-  AssetName:element.AssetName,
-  AssetTypeName:element.AssetTypeName,
-  Status:element.Status,
-  LastPerformed:element.LastPerformed,
-  CurrentHMR:element.CurrentHMR,
-  Next_PM:np,
-  Until_NextPM:unp,
-  Frequency:element.Frequency
- }
+      const data={
+        AssetName:element.AssetName,
+        AssetTypeName:element.AssetTypeName,
+        Status:element.Status,
+        LastPerformed:element.LastPerformed,
+        CurrentHMR:element.CurrentHMR,
+        Next_PM:np,
+        Until_NextPM:unp,
+        Frequency:element.Frequency
+      }
 
- assetDetails.push(data)
+      assetDetails.push(data)
 
- })
+      })
 
-const data1={
-  Data:{
-    details:assetDetails,
-    count:response.recordset
-  },
-  Message:'',
-  Status:true
-}
-
-  res.send(data1)
-})
-.catch((err1) => {
-  console.log("err in details",err1)
-});
+      const data1={
+        Data:{
+          details:assetDetails,
+          count:response.recordset
+        },
+        Message:'',
+        Status:true
+      }
+        res.send(data1)
+    })
+    .catch((err1) => {
+      console.log("err in details",err1)
+    });
   })
   .catch((err) => {
     console.log("err",err)
@@ -196,7 +181,6 @@ const data1={
 }
 
 exports.getPowerUsage=async(req,res)=>{
-  var currentHours=[];
   var today=new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');

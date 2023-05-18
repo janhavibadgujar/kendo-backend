@@ -1,19 +1,23 @@
 const operatorHelper = require("../helpers/operatorHelper");
 
 exports.getBySiteId = async (req, res) => {
-  var results = [];
+
   await operatorHelper.getBySiteId(req.params.siteid).then(async (response) => {
     if (response != null) {
       for (let i = 0; i < response.recordset.length; i++) {
         const id = response.recordset[i].AssetID;
         await operatorHelper.getOpeartorByOperatorId(id).then(async (operator) => {
-          if (operator != null) {
-            results.push(operator.recordset)
+          var data={
+            Data:operator.recordset,
+            Message:"",
+            Status:true
           }
+          res.send(data)
+         
         })
       }
 
-      res.send(results)
+     
     }
   })
     .catch((err) => {
