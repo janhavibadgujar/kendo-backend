@@ -75,8 +75,8 @@ CASE LEFT(CONVERT(VARCHAR(MAX), ac.EventData, 2), 8)
   WHEN '00000008' THEN 'Charger Cannot Control Output Current'
   WHEN '00000010' THEN 'High Battery Temperature'
   WHEN '00000020' THEN 'Low Battery Temperature'
-  WHEN '00000040' THEN 'High Battery Volatge'
-  WHEN '00000080' THEN 'Low Battery Volatge'
+  WHEN '00000040' THEN 'High Battery Voltage'
+  WHEN '00000080' THEN 'Low Battery Voltage'
   WHEN '00000100' THEN 'High Battery Resistance'
   WHEN '00000200' THEN 'Battery Temperature Sensor Out of Range'
   WHEN '00000400' THEN 'Can Communication Fault to Battery Module'
@@ -251,13 +251,13 @@ exports.getMapDetails=async(siteID)=>{
             THEN COALESCE(a.Name, STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, ''))
         ELSE STUFF(CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2), 1, PATINDEX('%[^0]%', CONVERT(VARCHAR(50), CONVERT(VARBINARY(8), CAST(c2.BatteryModule AS BIGINT)), 2)) - 1, '')
     END AS Paired2,
-    CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c1.EventData, 7, 4), 2)) * 100 AS Power1,
-    CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c1.EventData, 5, 2), 2)) * 100 AS Voltage1,
+    CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c1.EventData, 7, 4), 2)) AS Power1,
+    CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c1.EventData, 5, 2), 2)) AS Voltage1,
     CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c1.EventData, 19, 1), 2)) AS SoC1,
     c1.Port as Port1, c1.ID as ID1,
    
-    CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c2.EventData, 7, 4), 2)) * 100 AS Power2,
-    CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c2.EventData, 5, 2), 2)) * 100 AS Voltage2,
+    CONVERT(INT, CONVERT(VARBINARY(4), SUBSTRING(c2.EventData, 7, 4), 2)) AS Power2,
+    CONVERT(INT, CONVERT(VARBINARY(2), SUBSTRING(c2.EventData, 5, 2), 2)) AS Voltage2,
     CONVERT(INT, CONVERT(VARBINARY(1), SUBSTRING(c2.EventData, 19, 1), 2)) AS SoC2,
     c2.Port as Port2, c2.ID as ID2
     FROM Asset a
@@ -336,6 +336,7 @@ const q=`SELECT a.ID as AssetID, c1.status as Status1, c2.status as Status2
     AND a.Lon IS NOT NULL
     AND a.Lat IS NOT NULL;
     `
+
     return await pool.request()
             .query(q)
 }

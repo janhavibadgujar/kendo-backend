@@ -9,7 +9,7 @@ exports.getBySiteId = async (req, res) => {
         await operatorHelper.getOpeartorByOperatorId(id).then(async (operator) => {
           var data={
             Data:operator.recordset,
-            Message:"",
+            Message:'',
             Status:true
           }
           res.send(data)

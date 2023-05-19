@@ -42,7 +42,7 @@ exports.getAssetBySiteId=async(req,res)=>{
       })
       const details={
         Data:result,
-        Message:"",
+        Message:'',
         Status:true
       }
       res.send(details)
@@ -204,11 +204,6 @@ exports.getPowerUsage=async(req,res)=>{
   else
   {
     await assetHelper.getPowerUsageCurrent(req.body.SiteID,req.body.date).then((response)=>{
-      // currentHours = response.recordset.map(({ Hour, Charger, MaxkW }) => ({
-      //   Hour: Hour.split(' ')[1],
-      //   Charger,
-      //   MaxkW
-      // }));
       const data={
         Data:response.recordset,
         Message:'',
@@ -232,7 +227,8 @@ exports.getMapDetails=async(req,res)=>{
       const result = response.recordset.map(obj => {
         const match = details.recordset.find(item => item.AssetID === obj.AssetID);
         
-        if (match) {
+        if (match) 
+        {
             return { ...obj, Status1: match.Status1, Status2: match.Status2 };
         }
         
