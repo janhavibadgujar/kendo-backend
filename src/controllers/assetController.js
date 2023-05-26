@@ -181,6 +181,7 @@ exports.getMaintenanceStatusReport=async(req,res)=>{
 }
 
 exports.getPowerUsage=async(req,res)=>{
+  var currentHours=[];
   var today=new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -204,8 +205,14 @@ exports.getPowerUsage=async(req,res)=>{
   else
   {
     await assetHelper.getPowerUsageCurrent(req.body.SiteID,req.body.date).then((response)=>{
+      console.log("Length----",response.recordset.length)
+      currentHours = response.recordset.map(({ Hour, Charger, MaxkW }) => ({
+        Hour: Hour.split(' ')[1],
+        Charger,
+        MaxkW
+        }));
       const data={
-        Data:response.recordset,
+        Data:currentHours,
         Message:'',
         Status:true
       }
@@ -243,6 +250,30 @@ exports.getMapDetails=async(req,res)=>{
     })
       
  })
+  .catch((err) => {
+    console.log("err",err)
+    res.status(400).send({ message: `Can't find details` })
+  });
+}
+
+
+exports.getMaps=async(req,res)=>{
+  var d=[];
+ await assetHelper.getMapSystem5(req.params.SiteID).then(async(response)=>{
+    await assetHelper.getMapSystem6(req.params.SiteID).then(async(resp)=>{
+      await assetHelper.getMapSystem(req.params.SiteID).then(async(resp1)=>{
+        d=response.recordset.concat(resp.recordset, resp1.recordset);
+        console.log("d length---",d.length)
+        const data={
+          Data:d,
+          Message:'',
+          Status:true
+        }
+          res.send(data)
+      })
+    })
+    
+  })
   .catch((err) => {
     console.log("err",err)
     res.status(400).send({ message: `Can't find details` })

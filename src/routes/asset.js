@@ -24,4 +24,6 @@ router.post("/getPowerUsage",assetController.getPowerUsage);
 
 router.get("/getMapDetails/:SiteID",assetController.getMapDetails);
 
+router.get("/getMap/:SiteID",assetController.getMaps)
+
 module.exports=router
