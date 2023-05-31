@@ -9,5 +9,5 @@ exports.getById = async (id) => {
 
 exports.getAllCompany = async () => {
   return await pool.request()
-    .query('SELECT * FROM Company')
+    .query('SELECT Company.ID, Company.Name FROM Company ORDER BY Company.Name')
 }
